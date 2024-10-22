@@ -345,7 +345,7 @@ PACKAGES = [
     GitRepo(
         "https://github.com/google/amber.git",
         "git@github.com:google/amber.git",
-        "6bb8b9979d12122c3ac2e627bcad965129556d12",
+        "67fea651b886460d7b72295e680528c059bbbe40",
         "amber"),
     GitRepo(
         "https://github.com/open-source-parsers/jsoncpp.git",
@@ -358,7 +358,7 @@ PACKAGES = [
     GitRepo(
         "https://github.com/Igalia/vk_video_samples.git",
         "git@github.com:Igalia/vk_video_samples.git",
-        "6821adf11eb4f84a2168264b954c170d03237699",
+        "4b5c49d2c3ea7e9af6b7cce243780c62270eae77",
         "nvidia-video-samples"),
 ]
 

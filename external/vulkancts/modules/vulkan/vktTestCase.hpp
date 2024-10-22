@@ -59,10 +59,12 @@ namespace vkt
 
 struct ContextCommonData
 {
+    const vk::PlatformInterface &vkp;
     const vk::InstanceInterface &vki;
-    vk::VkDevice device;
     const vk::DeviceInterface &vkd;
+    vk::VkInstance instance;
     vk::VkPhysicalDevice physicalDevice;
+    vk::VkDevice device;
     vk::Allocator &allocator;
     uint32_t qfIndex;
     vk::VkQueue queue;
@@ -178,7 +180,7 @@ public:
 
     void checkPipelineConstructionRequirements(const vk::PipelineConstructionType pipelineConstructionType);
     void resetCommandPoolForVKSC(const vk::VkDevice device, const vk::VkCommandPool commandPool);
-    ContextCommonData getContextCommonData();
+    ContextCommonData getContextCommonData() const;
 
 #ifdef CTS_USES_VULKANSC
     static std::vector<VkFaultData> m_faultData;

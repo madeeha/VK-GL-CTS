@@ -29,9 +29,7 @@
 #include "vkQueryUtil.hpp"
 #include "deSharedPtr.hpp"
 #include "deSTLUtil.hpp"
-#include "tcuVector.hpp"
 #include "tcuVectorType.hpp"
-#include "tcuMaybe.hpp"
 #include "vkRefUtil.hpp"
 #include "vkCmdUtil.hpp"
 #include "vkObjUtil.hpp"
@@ -470,17 +468,11 @@ void PipelineLayoutWrapper::bindDescriptorSets(VkCommandBuffer commandBuffer, Vk
                                                const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                const uint32_t *pDynamicOffsets) const
 {
-    if (!isConstructionTypeShaderObject(m_pipelineConstructionType))
-    {
-        m_vk->cmdBindDescriptorSets(commandBuffer, pipelineBindPoint, *m_pipelineLayout, firstSet, descriptorSetCount,
-                                    pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    }
-    else
-    {
-        //m_vk->cmdBindDescriptorSets2EXT(commandBuffer, &m_setLayouts[firstSet], vk::VK_SHADER_STAGE_ALL_GRAPHICS, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-        m_vk->cmdBindDescriptorSets(commandBuffer, pipelineBindPoint, *m_pipelineLayout, firstSet, descriptorSetCount,
-                                    pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    }
+    // if (!isConstructionTypeShaderObject(m_pipelineConstructionType))
+    //      m_vk->cmdBindDescriptorSets2EXT(commandBuffer, &m_setLayouts[firstSet], vk::VK_SHADER_STAGE_ALL_GRAPHICS, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    // else
+    m_vk->cmdBindDescriptorSets(commandBuffer, pipelineBindPoint, *m_pipelineLayout, firstSet, descriptorSetCount,
+                                pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
 #ifndef CTS_USES_VULKANSC
@@ -1803,6 +1795,7 @@ struct GraphicsPipelineWrapper::InternalData
     const PipelineConstructionType pipelineConstructionType;
     const VkPipelineCreateFlags pipelineFlags;
     PipelineCreateFlags2 pipelineFlags2;
+    ShaderCreateFlags shaderFlags;
 
     // attribute used for making sure pipeline is configured in correct order
     int setupState;
@@ -1961,14 +1954,15 @@ struct GraphicsPipelineWrapper::InternalData
                  const std::vector<std::string>&    deviceExts,
                  const PipelineConstructionType        constructionType,
                  const VkPipelineCreateFlags        pipelineCreateFlags)
-        : vki                        (instanceInterface)
+        : vki                       (instanceInterface)
         , vk                        (vkd)
         , physicalDevice            (physDevice)
         , device                    (vkDevice)
-        , deviceExtensions            (deviceExts)
-        , pipelineConstructionType    (constructionType)
-        , pipelineFlags                (pipelineCreateFlags)
+        , deviceExtensions          (deviceExts)
+        , pipelineConstructionType  (constructionType)
+        , pipelineFlags             (pipelineCreateFlags)
         , pipelineFlags2            (0u)
+        , shaderFlags               (0u)
         , setupState                (PSS_NONE)
         , inputAssemblyState
         {
@@ -2115,6 +2109,15 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setPipelineRobustnessState(
     DE_ASSERT(m_internalData && (m_internalData->setupState == PSS_NONE));
 
     m_internalData->pPipelineRobustnessState = pipelineRobustnessState;
+    return *this;
+}
+
+GraphicsPipelineWrapper &GraphicsPipelineWrapper::setShaderCreateFlags(ShaderCreateFlags shaderFlags)
+{
+    // make sure states are not yet setup - all pipeline states must know about createFlags2
+    DE_ASSERT(m_internalData && m_internalData->setupState == PSS_NONE);
+
+    m_internalData->shaderFlags = shaderFlags;
     return *this;
 }
 
@@ -2837,6 +2840,24 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
     PipelineRenderingCreateInfoWrapper rendering, const VkPipelineCache partPipelineCache,
     VkPipelineCreationFeedbackCreateInfoEXT *partCreationFeedback)
 {
+    return setupPreRasterizationMeshShaderState2(
+        viewports, scissors, layout, renderPass, subpass, taskShader,
+        PipelineShaderStageModuleIdentifierCreateInfoWrapper(), meshShader,
+        PipelineShaderStageModuleIdentifierCreateInfoWrapper(), rasterizationState, taskSpecializationInfo,
+        meshSpecializationInfo, fragmentShadingRateState, rendering, partPipelineCache, partCreationFeedback);
+}
+
+GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShaderState2(
+    const std::vector<VkViewport> &viewports, const std::vector<VkRect2D> &scissors,
+    const PipelineLayoutWrapper &layout, const VkRenderPass renderPass, const uint32_t subpass,
+    const ShaderWrapper taskShader, PipelineShaderStageModuleIdentifierCreateInfoWrapper taskShaderModuleId,
+    const ShaderWrapper meshShader, PipelineShaderStageModuleIdentifierCreateInfoWrapper meshShaderModuleId,
+    const VkPipelineRasterizationStateCreateInfo *rasterizationState,
+    const VkSpecializationInfo *taskSpecializationInfo, const VkSpecializationInfo *meshSpecializationInfo,
+    VkPipelineFragmentShadingRateStateCreateInfoKHR *fragmentShadingRateState,
+    PipelineRenderingCreateInfoWrapper rendering, const VkPipelineCache partPipelineCache,
+    VkPipelineCreationFeedbackCreateInfoEXT *partCreationFeedback)
+{
     // Make sure pipeline was not already built.
     DE_ASSERT(m_pipelineFinal.get() == VK_NULL_HANDLE);
 
@@ -2848,7 +2869,7 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
     m_internalData->pFragmentShadingRateState = fragmentShadingRateState;
     m_internalData->pRenderingState           = rendering;
 
-    const bool hasTask         = (taskShader.isSet());
+    const bool hasTask         = (taskShader.isSet() || taskShaderModuleId.ptr);
     const auto taskShaderCount = static_cast<uint32_t>(hasTask);
     const auto pRasterizationState =
         rasterizationState ?
@@ -2870,6 +2891,8 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
             nullptr, // const VkSpecializationInfo*            pSpecializationInfo
         });
 
+    VkPipelineCreateFlags shaderModuleIdFlags = 0u;
+
     // Mesh shader.
     auto currStage = m_internalData->pipelineShaderStages.begin();
     {
@@ -2886,6 +2909,16 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
         stageInfo.stage               = VK_SHADER_STAGE_MESH_BIT_EXT;
         stageInfo.module              = shaderModule;
         stageInfo.pSpecializationInfo = meshSpecializationInfo;
+
+        if (meshShaderModuleId.ptr)
+        {
+            m_internalData->pipelineShaderIdentifiers.emplace_back(
+                new PipelineShaderStageModuleIdentifierCreateInfoWrapper(meshShaderModuleId.ptr));
+            currStage->pNext = m_internalData->pipelineShaderIdentifiers.back().get()->ptr;
+
+            if (!meshShader.isSet())
+                shaderModuleIdFlags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        }
 
         ++currStage;
     }
@@ -2905,6 +2938,16 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
         stageInfo.stage               = VK_SHADER_STAGE_TASK_BIT_EXT;
         stageInfo.module              = shaderModule;
         stageInfo.pSpecializationInfo = taskSpecializationInfo;
+
+        if (taskShaderModuleId.ptr)
+        {
+            m_internalData->pipelineShaderIdentifiers.emplace_back(
+                new PipelineShaderStageModuleIdentifierCreateInfoWrapper(taskShaderModuleId.ptr));
+            currStage->pNext = m_internalData->pipelineShaderIdentifiers.back().get()->ptr;
+
+            if (!taskShader.isSet())
+                shaderModuleIdFlags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        }
 
         ++currStage;
     }
@@ -2937,6 +2980,7 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
         m_internalData->monolithicPipelineCreateInfo.stageCount          = 1u + taskShaderCount;
         m_internalData->monolithicPipelineCreateInfo.pStages             = m_internalData->pipelineShaderStages.data();
         m_internalData->monolithicPipelineCreateInfo.pTessellationState  = pTessellationState;
+        m_internalData->monolithicPipelineCreateInfo.flags |= shaderModuleIdFlags;
     }
     else
     {
@@ -2960,9 +3004,13 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
             dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         }
 
-        auto &pipelinePartCreateInfo               = m_internalData->pipelinePartCreateInfo[1];
-        pipelinePartCreateInfo                     = initVulkanStructure(firstStructInChain);
-        pipelinePartCreateInfo.flags               = m_internalData->pipelineFlags | VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+        auto &pipelinePartCreateInfo = m_internalData->pipelinePartCreateInfo[1];
+        pipelinePartCreateInfo       = initVulkanStructure(firstStructInChain);
+
+        pipelinePartCreateInfo.flags =
+            (m_internalData->pipelineFlags | VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | shaderModuleIdFlags);
+        // Remove VK_PIPELINE_CREATE_DERIVATIVE_BIT?
+
         pipelinePartCreateInfo.layout              = *layout;
         pipelinePartCreateInfo.renderPass          = renderPass;
         pipelinePartCreateInfo.subpass             = subpass;
@@ -2976,6 +3024,9 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
         if (m_internalData->pipelineConstructionType == PIPELINE_CONSTRUCTION_TYPE_LINK_TIME_OPTIMIZED_LIBRARY)
             pipelinePartCreateInfo.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
 
+        if ((shaderModuleIdFlags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT) != 0)
+            m_internalData->failOnCompileWhenLinking = true;
+
         if (m_internalData->pipelineFlags2)
         {
             auto &flags2CreateInfo = m_internalData->pipelinePartFlags2CreateInfo[1];
@@ -2984,8 +3035,8 @@ GraphicsPipelineWrapper &GraphicsPipelineWrapper::setupPreRasterizationMeshShade
             pipelinePartCreateInfo.flags = 0u;
         }
 
-        m_pipelineParts[1] = createGraphicsPipeline(m_internalData->vk, m_internalData->device, partPipelineCache,
-                                                    &pipelinePartCreateInfo);
+        m_pipelineParts[1] = makeGraphicsPipeline(m_internalData->vk, m_internalData->device, partPipelineCache,
+                                                  &pipelinePartCreateInfo);
     }
 
     return *this;
@@ -3329,8 +3380,9 @@ vk::VkShaderCreateInfoEXT GraphicsPipelineWrapper::makeShaderCreateInfo(VkShader
         shader.getShaderBinary();
 
     vk::VkShaderCreateInfoEXT shaderCreateInfo = vk::initVulkanStructure();
-    shaderCreateInfo.flags =
-        link ? (vk::VkShaderCreateFlagsEXT)vk::VK_SHADER_CREATE_LINK_STAGE_BIT_EXT : (vk::VkShaderCreateFlagsEXT)0u;
+    const auto baseFlags =
+        (link ? static_cast<vk::VkShaderCreateFlagsEXT>(vk::VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) : 0u);
+    shaderCreateInfo.flags = (baseFlags | m_internalData->shaderFlags); // Add user-provided flags.
     shaderCreateInfo.stage = stage;
     shaderCreateInfo.nextStage =
         getNextStages(stage, m_internalData->tessellationShaderFeature, m_internalData->geometryShaderFeature, link);
@@ -3508,76 +3560,8 @@ void GraphicsPipelineWrapper::buildPipeline(const VkPipelineCache pipelineCache,
         DE_ASSERT(m_internalData->extensionEnabled("VK_EXT_shader_object"));
 
         // Add dynamic states that are required for each enabled extension
-        if (m_internalData->extensionEnabled("VK_EXT_transform_feedback"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_blend_operation_advanced"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_conservative_rasterization"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
-        if (m_internalData->extensionEnabled("VK_NV_framebuffer_mixed_samples"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_framebuffer_mixed_samples"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_framebuffer_mixed_samples"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_coverage_reduction_mode"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_fragment_coverage_to_color"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_fragment_coverage_to_color"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV);
-        if (m_internalData->extensionEnabled("VK_EXT_depth_clip_enable"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_depth_clip_control"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_color_write_enable"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_conservative_rasterization"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT);
-        if (m_internalData->extensionEnabled("VK_KHR_line_rasterization") ||
-            m_internalData->extensionEnabled("VK_EXT_line_rasterization"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
-        if (m_internalData->extensionEnabled("VK_KHR_line_rasterization") ||
-            m_internalData->extensionEnabled("VK_EXT_line_rasterization"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
-        if (m_internalData->extensionEnabled("VK_KHR_line_rasterization") ||
-            m_internalData->extensionEnabled("VK_EXT_line_rasterization"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_LINE_STIPPLE_KHR);
-        if (m_internalData->extensionEnabled("VK_EXT_provoking_vertex"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT);
-        if (m_internalData->extensionEnabled("VK_KHR_fragment_shading_rate"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR);
-        if (m_internalData->extensionEnabled("VK_NV_representative_fragment_test"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_EXT_sample_locations"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_sample_locations"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
-        // Not working with VK_KHR_fragment_shading_rate
-        /*if (m_internalData->extensionEnabled("VK_NV_shading_rate_image"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_shading_rate_image"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV);
-        if (m_internalData->extensionEnabled("VK_NV_shading_rate_image"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV);*/
-        if (m_internalData->extensionEnabled("VK_NV_viewport_swizzle"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_clip_space_w_scaling"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_clip_space_w_scaling"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
-        if (m_internalData->extensionEnabled("VK_NV_scissor_exclusive"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV);
-        if (m_internalData->extensionEnabled("VK_NV_scissor_exclusive"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
-        if (m_internalData->extensionEnabled("VK_EXT_discard_rectangles"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_discard_rectangles"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_discard_rectangles"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT);
-        if (m_internalData->extensionEnabled("VK_EXT_attachment_feedback_loop_dynamic_state"))
-            dynamicStates.push_back(vk::VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
+        const auto dynStateFromExts = getShaderObjectDynamicStatesFromExtensions(m_internalData->deviceExtensions);
+        dynamicStates.insert(end(dynamicStates), begin(dynStateFromExts), end(dynStateFromExts));
 
         // Remove dynamic states that were already set as dynamic for the pipeline
         // These dynamic state will already be set in the tests
@@ -4593,11 +4577,121 @@ const VkGraphicsPipelineCreateInfo &GraphicsPipelineWrapper::getPartialPipelineC
     return m_internalData->pipelinePartCreateInfo[part];
 }
 
+#ifndef CTS_USES_VULKANSC
+VkShaderEXT GraphicsPipelineWrapper::getShader(VkShaderStageFlagBits stage) const
+{
+    switch (stage)
+    {
+    case VK_SHADER_STAGE_VERTEX_BIT:
+        return m_internalData->vertexShader.getShader();
+    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+        return m_internalData->tessellationControlShader.getShader();
+    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+        return m_internalData->tessellationEvaluationShader.getShader();
+    case VK_SHADER_STAGE_GEOMETRY_BIT:
+        return m_internalData->geometryShader.getShader();
+    case VK_SHADER_STAGE_FRAGMENT_BIT:
+        return m_internalData->fragmentShader.getShader();
+    case VK_SHADER_STAGE_MESH_BIT_EXT:
+        return m_internalData->meshShader.getShader();
+    case VK_SHADER_STAGE_TASK_BIT_EXT:
+        return m_internalData->taskShader.getShader();
+    default:
+        break;
+    }
+
+    DE_ASSERT(false);
+    return VK_NULL_HANDLE;
+}
+#endif // CTS_USES_VULKANSC
+
 void GraphicsPipelineWrapper::destroyPipeline(void)
 {
     DE_ASSERT(m_pipelineFinal.get() != VK_NULL_HANDLE);
 
     m_pipelineFinal = Move<VkPipeline>();
+}
+
+std::vector<VkDynamicState> getShaderObjectDynamicStatesFromExtensions(const std::vector<std::string> &extensions)
+{
+    std::vector<VkDynamicState> dynamicStates;
+
+#ifndef CTS_USES_VULKANSC
+    std::set<std::string> extensionSet(begin(extensions), end(extensions));
+
+    // Add dynamic states that are required for each enabled extension
+    if (extensionSet.count("VK_EXT_transform_feedback") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
+    if (extensionSet.count("VK_EXT_blend_operation_advanced") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    if (extensionSet.count("VK_EXT_conservative_rasterization") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
+    if (extensionSet.count("VK_NV_framebuffer_mixed_samples") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV);
+    if (extensionSet.count("VK_NV_framebuffer_mixed_samples") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV);
+    if (extensionSet.count("VK_NV_framebuffer_mixed_samples") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV);
+    if (extensionSet.count("VK_NV_coverage_reduction_mode") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV);
+    if (extensionSet.count("VK_NV_fragment_coverage_to_color") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV);
+    if (extensionSet.count("VK_NV_fragment_coverage_to_color") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV);
+    if (extensionSet.count("VK_EXT_depth_clip_enable") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT);
+    if (extensionSet.count("VK_EXT_depth_clip_control") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT);
+    if (extensionSet.count("VK_EXT_color_write_enable") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    if (extensionSet.count("VK_EXT_conservative_rasterization") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT);
+    if (extensionSet.count("VK_KHR_line_rasterization") > 0u || extensionSet.count("VK_EXT_line_rasterization") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+    if (extensionSet.count("VK_KHR_line_rasterization") > 0u || extensionSet.count("VK_EXT_line_rasterization") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    if (extensionSet.count("VK_KHR_line_rasterization") > 0u || extensionSet.count("VK_EXT_line_rasterization") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_LINE_STIPPLE_KHR);
+    if (extensionSet.count("VK_EXT_provoking_vertex") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT);
+    if (extensionSet.count("VK_KHR_fragment_shading_rate") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR);
+    if (extensionSet.count("VK_NV_representative_fragment_test") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV);
+    if (extensionSet.count("VK_EXT_sample_locations") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    if (extensionSet.count("VK_EXT_sample_locations") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    // Not working with VK_KHR_fragment_shading_rate
+    /*if (extensionSet.count("VK_NV_shading_rate_image") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV);
+    if (extensionSet.count("VK_NV_shading_rate_image") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV);
+    if (extensionSet.count("VK_NV_shading_rate_image") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV);*/
+    if (extensionSet.count("VK_NV_viewport_swizzle") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV);
+    if (extensionSet.count("VK_NV_clip_space_w_scaling") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV);
+    if (extensionSet.count("VK_NV_clip_space_w_scaling") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
+    if (extensionSet.count("VK_NV_scissor_exclusive") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV);
+    if (extensionSet.count("VK_NV_scissor_exclusive") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
+    if (extensionSet.count("VK_EXT_discard_rectangles") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
+    if (extensionSet.count("VK_EXT_discard_rectangles") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
+    if (extensionSet.count("VK_EXT_discard_rectangles") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT);
+    if (extensionSet.count("VK_EXT_attachment_feedback_loop_dynamic_state") > 0u)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
+#else
+    DE_UNREF(extensions);
+#endif
+
+    return dynamicStates;
 }
 
 } // namespace vk

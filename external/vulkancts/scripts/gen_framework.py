@@ -842,16 +842,19 @@ class API:
         # temporary workaround for extensions that are marked only for vulkan api in xml while
         # they are need by vulkan_json_data.hpp and vulkan_json_parser.hpp in vulkansc
         if self.apiName == "vulkansc":
-            deviceDiagnosticCheckpoints = [e for e in self.notSupportedExtensions if e.name == "VK_NV_device_diagnostic_checkpoints"]
-            if len(deviceDiagnosticCheckpoints):
-                deviceDiagnosticCheckpoints = deviceDiagnosticCheckpoints[0]
-                self.extensions.append(deviceDiagnosticCheckpoints)
-                self.notSupportedExtensions.remove(deviceDiagnosticCheckpoints)
-            formatFeatureFlags2 = [e for e in self.notSupportedExtensions if e.name == "VK_KHR_format_feature_flags2"]
-            if len(formatFeatureFlags2):
-                formatFeatureFlags2 = formatFeatureFlags2[0]
-                self.extensions.append(formatFeatureFlags2)
-                self.notSupportedExtensions.remove(formatFeatureFlags2)
+            workAroundList = [
+                    "VK_NV_device_diagnostic_checkpoints",
+                    "VK_KHR_format_feature_flags2",
+                    "VK_EXT_vertex_attribute_divisor",
+                    "VK_EXT_global_priority",
+                    "VK_EXT_calibrated_timestamps",
+            ]
+            for extName in workAroundList:
+                extData = [e for e in self.notSupportedExtensions if e.name == extName]
+                if len(extData):
+                    extData = extData[0]
+                    self.extensions.append(extData)
+                    self.notSupportedExtensions.remove(extData)
 
         # add new enumerators that were added by extensions to api.enums
         # we have to do it at the end for SC because some enums are dependent from extensions/api versions
@@ -1630,36 +1633,59 @@ def writeFuncPtrInterfaceImpl (api, filename, functionTypes, className):
 
     def makeFuncPtrInterfaceImpl ():
         for function in api.functions:
+            functionInterfaceName = getInterfaceName(function.name)
             if function.getType() in functionTypes:
                 yield ""
-                yield "%s %s::%s (%s) const" % (function.returnType, className, getInterfaceName(function.name), argListToStr(function.arguments))
+                yield "%s %s::%s (%s) const" % (function.returnType, className, functionInterfaceName, argListToStr(function.arguments))
                 yield "{"
                 # Check for compute only forbidden commands
-                if getInterfaceName(function.name) in computeOnlyForbiddenCommands:
+                if functionInterfaceName in computeOnlyForbiddenCommands:
                     yield "    if( m_computeOnlyMode ) THROW_NOT_SUPPORTED_COMPUTE_ONLY();"
                 # Check for compute only restricted commands
-                if getInterfaceName(function.name) in computeOnlyRestrictedCommands:
+                if functionInterfaceName in computeOnlyRestrictedCommands:
                     yield "\tif( m_computeOnlyMode )"
                     yield "\t{"
-                    yield computeOnlyRestrictedCommands[getInterfaceName(function.name)]
+                    yield computeOnlyRestrictedCommands[functionInterfaceName]
                     yield "\t}"
+                # Special case for vkEnumerateInstanceVersion
                 if function.name == "vkEnumerateInstanceVersion":
                     yield "    if (m_vk.enumerateInstanceVersion)"
                     yield "        return m_vk.enumerateInstanceVersion(pApiVersion);"
                     yield ""
                     yield "    *pApiVersion = VK_API_VERSION_1_0;"
                     yield "    return VK_SUCCESS;"
-                elif function.getType() == Function.TYPE_INSTANCE and function.arguments[0].type == "VkPhysicalDevice" and len(function.aliasList) > 0 and getInterfaceName(function.name) in getInterfaceName(function.aliasList[0]):
-                    yield "    vk::VkPhysicalDeviceProperties props;"
-                    yield "    m_vk.getPhysicalDeviceProperties(physicalDevice, &props);"
-                    yield "    if (props.apiVersion >= VK_API_VERSION_1_1)"
-                    yield "        %sm_vk.%s(%s);" % ("return " if function.returnType != "void" else "", getInterfaceName(function.name), ", ".join(a.name for a in function.arguments))
-                    yield "    else"
-                    yield "        %sm_vk.%s(%s);" % ("return " if function.returnType != "void" else "", getInterfaceName(function.aliasList[0]), ", ".join(a.name for a in function.arguments))
-                else:
-                    yield "    %sm_vk.%s(%s);" % ("return " if function.returnType != "void" else "", getInterfaceName(function.name), ", ".join(a.name for a in function.arguments))
+                    yield "}"
+                    continue
+                # Simplify code by preparing string template needed in few code branches
+                tab = ' ' * 4
+                funReturn = "" if function.returnType == "void" else "return "
+                funParams = ", ".join(a.name for a in function.arguments)
+                callTemplate = f"{tab}{funReturn}m_vk.{{}}({funParams});"
+                # Special case for all instance functions that operate on VkPhysicalDevice
+                if function.getType() == Function.TYPE_INSTANCE and function.arguments[0].type == "VkPhysicalDevice":
+                    # Helper function that checks if entry point was promoted to core
+                    def isInCore(allFunAliases):
+                        for feature in api.features:
+                            if api.apiName not in feature.api.split(','):
+                                continue
+                            for r in feature.requirementsList:
+                                for n in allFunAliases:
+                                    if n in r.commandList:
+                                        return (True, feature.number)
+                        return (False, "1.0")
+                    (inCore, coreNumber) = isInCore([function.name] + function.aliasList)
+                    if inCore and "1.0" not in coreNumber:
+                        callTemplate = f"{tab}{callTemplate}"
+                        yield "    vk::VkPhysicalDeviceProperties props;"
+                        yield "    m_vk.getPhysicalDeviceProperties(physicalDevice, &props);"
+                        yield f"    if (props.apiVersion >= VK_API_VERSION_{coreNumber.replace('.', '_')})"
+                        yield callTemplate.format(functionInterfaceName)
+                        yield "    else"
+                        yield callTemplate.format(getInterfaceName(function.aliasList[0]))
+                        yield "}"
+                        continue
+                yield callTemplate.format(functionInterfaceName)
                 yield "}"
-
     writeInlFile(filename, INL_HEADER, makeFuncPtrInterfaceImpl())
 
 def writeFuncPtrInterfaceSCImpl (api, filename, functionTypes, className):

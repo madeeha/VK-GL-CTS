@@ -211,7 +211,7 @@ void RayQueryStressCase::initPrograms(vk::SourceCollections &programCollection) 
                "gl_RayQueryCandidateIntersectionAABBEXT)\n"
                "       {\n"
                "           float t = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) - index + 0.5f;\n"
-               "           if (t < rayQueryGetIntersectionTEXT(rayQuery, true))"
+               "           if (t > 0 && t < rayQueryGetIntersectionTEXT(rayQuery, true))"
                "           {\n"
                "                rayQueryGenerateIntersectionEXT(rayQuery, t);\n"
                "           }\n"
@@ -382,11 +382,13 @@ tcu::TestStatus RayQueryStressInstance::iterate(void)
     {
         m_rayQueryParams.verts.push_back(instance1);
         m_rayQueryParams.aabbs.push_back(emptyVerts);
+        m_rayQueryParams.triangles = true;
     }
     else
     {
         m_rayQueryParams.verts.push_back(emptyVerts);
         m_rayQueryParams.aabbs.push_back(instance1);
+        m_rayQueryParams.triangles = false;
     }
 
     std::vector<ResultData> resultData;

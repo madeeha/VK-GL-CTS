@@ -2070,6 +2070,9 @@ struct TestConfig
     // Force alpha to one feature disabled.
     bool disableAlphaToOneFeature;
 
+    // Create pipeline with VkPipelineSampleLocationsStateCreateInfoEXT
+    bool provideSampleLocationsState;
+
     // Static and dynamic pipeline configuration.
     VertexGeneratorConfig vertexGenerator;
     CullModeConfig cullModeConfig;
@@ -2186,6 +2189,7 @@ struct TestConfig
         , sampleShadingEnable(false)
         , minSampleShading(0.0f)
         , disableAlphaToOneFeature(false)
+        , provideSampleLocationsState(true)
         , vertexGenerator(makeVertexGeneratorConfig(staticVertexGenerator, dynamicVertexGenerator))
         , cullModeConfig(static_cast<vk::VkCullModeFlags>(vk::VK_CULL_MODE_NONE))
         , frontFaceConfig(vk::VK_FRONT_FACE_COUNTER_CLOCKWISE)
@@ -2303,6 +2307,7 @@ struct TestConfig
         , sampleShadingEnable(other.sampleShadingEnable)
         , minSampleShading(other.minSampleShading)
         , disableAlphaToOneFeature(other.disableAlphaToOneFeature)
+        , provideSampleLocationsState(other.provideSampleLocationsState)
         , vertexGenerator(other.vertexGenerator)
         , cullModeConfig(other.cullModeConfig)
         , frontFaceConfig(other.frontFaceConfig)
@@ -4377,7 +4382,8 @@ void setDynamicStates(const TestConfig &testConfig, const vk::DeviceInterface &v
             vkd.cmdSetColorBlendAdvancedEXT(cmdBuffer, 0u, de::sizeU32(equations), de::dataOrNull(equations));
         }
 
-        if (!isAdvanced || testConfig.colorBlendBoth)
+        if (!isAdvanced || testConfig.colorBlendBoth ||
+            vk::isConstructionTypeShaderObject(testConfig.pipelineConstructionType))
         {
             // VUID-VkColorBlendEquationEXT-colorBlendOp-07361 forbids colorBlendOp and alphaBlendOp to be any advanced operation.
             // When the advanced blend op will be set by vkCmdSetColorBlendAdvancedEXT, we use a legal placeholder in this call.
@@ -5792,7 +5798,7 @@ tcu::TestStatus ExtendedDynamicStateInstance::iterate(void)
     ReprFragmentPtr pReprFragment;
 #endif // CTS_USES_VULKANSC
 
-    if (m_testConfig.sampleLocationsStruct())
+    if (m_testConfig.sampleLocationsStruct() && m_testConfig.provideSampleLocationsState)
     {
         pSampleLocations = SampleLocationsPtr(
             new vk::VkPipelineSampleLocationsStateCreateInfoEXT(vk::initVulkanStructure(multisamplePnext)));
@@ -8516,9 +8522,14 @@ tcu::TestCaseGroup *createExtendedDynamicStateTests(tcu::TestContext &testCtx,
                 // Dynamically enable sample locations
                 orderingGroup->addChild(new ExtendedDynamicStateTest(testCtx, "sample_locations_enable", config));
 
-                config.sampleLocationsEnableConfig.swapValues();
+                config.provideSampleLocationsState = false;
                 config.referenceColor.reset(new TopLeftBorderGenerator(kDefaultTriangleColor, kDefaultClearColor,
                                                                        kDefaultClearColor, kDefaultClearColor));
+                orderingGroup->addChild(
+                    new ExtendedDynamicStateTest(testCtx, "sample_locations_enable_no_create_info", config));
+
+                config.provideSampleLocationsState = true;
+                config.sampleLocationsEnableConfig.swapValues();
 
                 // Dynamically disable sample locations
                 orderingGroup->addChild(new ExtendedDynamicStateTest(testCtx, "sample_locations_disable", config));
