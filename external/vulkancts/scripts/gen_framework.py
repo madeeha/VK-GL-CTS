@@ -839,9 +839,9 @@ class API:
                 if not any(x.name == ext.promotedto for x in self.extensions):
                     ext.promotedto = None
 
-        # temporary workaround for extensions that are marked only for vulkan api in xml while
-        # they are need by vulkan_json_data.hpp and vulkan_json_parser.hpp in vulkansc
         if self.apiName == "vulkansc":
+            # temporary workaround for extensions that are marked only for vulkan api in xml while
+            # they are need by vulkan_json_data.hpp and vulkan_json_parser.hpp in vulkansc
             workAroundList = [
                     "VK_NV_device_diagnostic_checkpoints",
                     "VK_KHR_format_feature_flags2",
@@ -855,7 +855,14 @@ class API:
                     extData = extData[0]
                     self.extensions.append(extData)
                     self.notSupportedExtensions.remove(extData)
-
+            # temporary workaround for enums needed by vulkan_json_parser.hpp that are marked only for vulkan api in xml
+            scFeatures = [f for f in self.features if f.api == "vulkansc"][0]
+            for enum in self.enums:
+                if enum.name == "VkPipelineLayoutCreateFlagBits":
+                    self.addEnumerator(enum, "VK_PIPELINE_LAYOUT_CREATE_RESERVED_0_BIT_AMD", None, None, None, 0, None)
+                    self.addEnumerator(enum, "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT", None, None, None, 1, None)
+                    scFeatures.requirementsList[0].typeList.append(enum.name)
+                    break
         # add new enumerators that were added by extensions to api.enums
         # we have to do it at the end for SC because some enums are dependent from extensions/api versions
         # and those dependencies can be checked only after all extensions were read
@@ -981,14 +988,13 @@ class API:
             scFeatures = [f for f in self.features if f.api == "vulkansc"][0]
             for featureRequirement in scFeatures.requirementsList:
                 if featureRequirement.operation == "remove":
-                    for removeFun in featureRequirement.commandList:
-                        # find function in the list of all functions
-                        for fun in self.functions:
-                            if removeFun == fun.name:
-                                functionsToRemove.append(fun)
-                                break
+                    # find function in the list of all functions
+                    for fun in self.functions:
+                        if fun.name in featureRequirement.commandList:
+                            functionsToRemove.append(fun)
             for fun in functionsToRemove:
                 self.functions.remove(fun)
+
             # sc is based on vk1.2 so we need to check features of vk1.3+
             # and rename functions and structures that were promoted in
             # those versions to their previous names (aliases)
@@ -999,6 +1005,24 @@ class API:
                     continue
                 # iterate over all requirements and enums/commands/structs added in them
                 for featureRequirement in feature.requirementsList:
+                    renamedFunctionsList = []
+                    # find promotedFun in list of all functions
+                    for fun in self.functions:
+                        if fun.name not in featureRequirement.commandList:
+                            continue
+                        # replace function name with its last alias
+                        fun.name = fun.aliasList[-1]
+                        fun.aliasList = fun.aliasList[:-1]
+                        # memorize renamed functions
+                        renamedFunctionsList.append(fun)
+                    # skip renaming enums and structures for extensions that are available for SC
+                    if featureRequirement.comment is not None:
+                        matchedExtension = re.search(r'Promoted from (\w+) ', featureRequirement.comment, re.IGNORECASE)
+                        if matchedExtension is not None:
+                            promotedExtensionName = matchedExtension.group(1)
+                            extensionList = [e for e in self.extensions if e.name == promotedExtensionName]
+                            if len(extensionList) > 0:
+                                continue
                     for promotedEnumerator in featureRequirement.enumList:
                         # iterate over all enums and find one that was extended
                         for enum in self.enums:
@@ -1023,38 +1047,33 @@ class API:
                                 break
                             if enumeratorReplaced:
                                 break
-                    renamedFunctionsList = []
-                    for promotedFun in featureRequirement.commandList:
-                        # find promotedFun in list of all functions
-                        for fun in self.functions:
-                            if fun.name != promotedFun:
-                                continue
-                            # replace function name with its last alias
-                            fun.name = fun.aliasList[-1]
-                            fun.aliasList = fun.aliasList[:-1]
-                            # memorize renamed functions
-                            renamedFunctionsList.append(fun)
-                            break
-                    for promotedStruct in featureRequirement.typeList:
-                        # find promotedStruct in list of all structures
-                        for struct in self.compositeTypes:
-                            if struct.name != promotedStruct:
-                                continue
-                            # skip structures without alias
-                            if len(struct.aliasList) == 0:
-                                break
-                            # replace struct name with its last alias
-                            struct.notSupportedAlias = struct.name
-                            struct.name = struct.aliasList[-1]
-                            struct.aliasList = struct.aliasList[:-1]
-                            # memorize all renamed structures
-                            renamedStructuresDict[promotedStruct] = struct
-                            # check all renamed functions and make sure that argument types are also renamed
-                            for renamedFun in renamedFunctionsList:
-                                for arg in renamedFun.arguments:
-                                    if arg.type == promotedStruct:
-                                        arg.type = struct.name
-                            break
+                    structsToRemove = []
+                    # find promotedStruct in list of all structures
+                    for struct in self.compositeTypes:
+                        promotedStruct = struct.name
+                        if promotedStruct not in featureRequirement.typeList:
+                            continue
+                        # skip structures without alias
+                        if len(struct.aliasList) == 0:
+                            # remove VkPhysicalDeviceVulkan13Features/Properties
+                            if "VkPhysicalDeviceVulkan" in promotedStruct:
+                                structsToRemove.append(struct)
+                            continue
+                        # replace struct name with its last alias
+                        struct.notSupportedAlias = struct.name
+                        struct.name = struct.aliasList[-1]
+                        struct.aliasList = struct.aliasList[:-1]
+                        # memorize all renamed structures
+                        renamedStructuresDict[promotedStruct] = struct
+                        # check all renamed functions and make sure that argument types are also renamed
+                        for renamedFun in renamedFunctionsList:
+                            for arg in renamedFun.arguments:
+                                if arg.type == promotedStruct:
+                                    arg.type = struct.name
+                    # remove structures that were marked for removal
+                    for st in structsToRemove:
+                        self.compositeTypes.remove(st)
+
             # iterate over all renamed structures and make sure that all their attributes are also renamed
             for newName in renamedStructuresDict:
                 for member in renamedStructuresDict[newName].members:
@@ -2979,7 +2998,7 @@ def writeDeviceFeatures(api, dfDefs, filename):
         # construct makeFeatureDesc template function definitions
         sTypeName = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_{0}_FEATURES{1}".format(sType, sVerSuffix + sExtSuffix)
         makeFeatureDescDefinitions.append("template<> FeatureDesc makeFeatureDesc<{0}>(void) " \
-                                          "{{ return FeatureDesc{{{1}, {2}, {3}, {4}}}; }}".format(extStruct, sTypeName, extensionNameDefinition, specVersionDef, len(dfDefs)-idx))
+                                          "{{ return FeatureDesc{{{1}, {2}, {3}}}; }}".format(extStruct, sTypeName, extensionNameDefinition, specVersionDef))
         # construct CreateFeatureStruct wrapper block
         featureStructWrappers.append("\t{{ createFeatureStructWrapper<{0}>, {1}, {2} }},".format(extStruct, extensionNameDefinition, specVersionDef))
     # construct function that will check for which vk version structure sType is part of blob
@@ -3186,7 +3205,7 @@ def writeDeviceProperties(api, dpDefs, filename):
         # construct makePropertyDesc template function definitions
         sTypeName = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_{0}_PROPERTIES{1}".format(sType, sVerSuffix + sExtSuffix)
         makePropertyDescDefinitions.append("template<> PropertyDesc makePropertyDesc<{0}>(void) " \
-                                           "{{ return PropertyDesc{{{1}, {2}, {3}, {4}}}; }}".format(extStruct, sTypeName, extensionNameDefinition, specVersionDef, len(dpDefs)-idx))
+                                           "{{ return PropertyDesc{{{1}, {2}, {3}}}; }}".format(extStruct, sTypeName, extensionNameDefinition, specVersionDef))
         # construct CreateProperty struct wrapper block
         propertyStructWrappers.append("\t{{ createPropertyStructWrapper<{0}>, {1}, {2} }},".format(extStruct, extensionNameDefinition, specVersionDef))
     # construct method that will check if structure sType is part of blob
@@ -3939,6 +3958,247 @@ def writeGetDeviceProcAddr(api, filename):
 
     writeInlFile(filename, INL_HEADER, stream)
 
+def writeProfileTests(inlFileName, jsonFilesList):
+
+    # helper function; workaround for lack of information in json about limit type
+    def getLimitMacro(propName, propComponent):
+        maxUintPropNames = ["bufferImageGranularity", "storageTexelBufferOffsetAlignmentBytes",\
+                            "robustUniformBufferAccessSizeAlignment", "shaderWarpsPerSM",\
+                            "perViewPositionAllComponents", "minTexelBufferOffsetAlignment",\
+                            "minUniformBufferOffsetAlignment"]
+        minFloatPropNames = ["maxSamplerLodBias"]
+        maxFloatPropNames = ["pointSizeGranularity", "lineWidthGranularity"]
+        minDevSizePropNames = ["maxBufferSize"]
+        if propName in maxUintPropNames:
+            return "LIM_MAX_UINT32"
+        elif propName in minFloatPropNames:
+            return "LIM_MIN_FLOAT"
+        elif propName in maxFloatPropNames:
+            return "LIM_MAX_FLOAT"
+        elif propName in minDevSizePropNames:
+            return "LIM_MIN_DEVSIZE"
+        elif propName.endswith("SampleCounts"):
+            return "LIM_MIN_BITI32"
+        elif not propName.startswith("max") and propName.endswith("Range"):
+            return "LIM_MAX_FLOAT" if propComponent == 0 else "LIM_MIN_FLOAT"
+        return "LIM_MIN_UINT32"
+
+    # helper function that adds property or feature structures to lists of struct initializers
+    def constructStruct(structName, structInitNamesList, structInitList):
+        # skip structures that already are in the chain
+        if structName in structInitNamesList:
+            return
+        structInitNamesList.append(structName)
+        # construct structure instance and connect it to chain
+        parentStruct = "" if (len(structInitNamesList) == 3) else "&vk" + structInitNamesList[-2]
+        structInitList.append(f"\tVkPhysicalDevice{structName} vk{structName} = initVulkanStructure({parentStruct});")
+
+    # helper function handling strings representing property limit checks
+    def addPropertyEntries(structName, propName, propLimit, propertyTableItems):
+        if propName == "driverName":
+            return
+        propSubItems = [(propName, propLimit)]
+        combinedStructName = structName
+        # checkk if propLimit is actualy a dictionary this will be the case when propName is "limits";
+        # in that case we have to get all sub items and add all of them to propertyTableItems
+        if isinstance(propLimit, dict):
+            propSubItems = propLimit.items()
+            combinedStructName += "." + propName
+        # usualy we will add just one item but we need to handle cases where there is more
+        for name, limit in propSubItems:
+            limitComponentCount = 1
+            if isinstance(limit, list):
+                limitComponentCount = len(limit)
+                # handle special case like storageImageSampleCounts
+                if limitComponentCount == 1:
+                   limit = limit[0]
+            componentAccessFormat = ""
+            if limitComponentCount > 1:
+                # if limit is list of strings joint them together;
+                # e.g. this is the case for subgroupSupportedStages
+                if isinstance(limit[0], str):
+                    limitComponentCount = 1
+                    limit = "|".join(limit)
+                else:
+                    componentAccessFormat = "[{}]"
+            # handle case where limit is represented by more than one value;
+            # in that case we will add as many entries to propertyTableItems as there are limiting values
+            for i in range(limitComponentCount):
+                componentAccess = componentAccessFormat.format(i)
+                limitMacro = getLimitMacro(name, i)
+                limitValue = "true" if limit == True else limit
+                if limitValue == False:
+                     limitValue = "false"
+                limitValue = limitValue[i] if limitComponentCount > 1 else limitValue
+                propertyTableItems += [f"PN({combinedStructName}.{name}{componentAccess}), {limitMacro}({limitValue})"]
+
+    vkpdLen = len("VkPhysicalDevice")
+    profilesList = []
+    stream = []
+
+    for jsonFile in jsonFilesList:
+        jsonContent = readFile(jsonFile)
+        profilesDict = json.loads(jsonContent)
+        capabilitiesDefinitionsDict = profilesDict["capabilities"]
+
+        for profileName, profileData in reversed(profilesDict["profiles"].items()):
+            featureStructInitList = []
+            featureStructInitNamesList = ["Features", "Features2"]
+            featureTableItems = []
+            propertyStructInitList = []
+            propertyStructInitNamesList = ["Properties", "Properties2"]
+            propertyTableItems = []
+            extensionList = []
+            formatsList = []
+            highestMajor = 1
+            highestMinor = 0
+
+            allCapabilities = profileData["capabilities"] + profileData.get("optionals", [])
+            for capability in allCapabilities:
+                capabilityList = capability if isinstance(capability, list) else [capability]
+                for capabilityName in capabilityList:
+                    capabilityDefinition = capabilitiesDefinitionsDict[capabilityName]
+                    # identify highest required vulkan version
+                    match = re.match(r"vulkan(\d)(\d)requirements", capabilityName)
+                    if match is not None:
+                        major, minor = int(match.group(1)), int (match.group(2))
+                        if major*10 + minor > highestMajor * 10 + highestMinor:
+                            highestMajor, highestMinor = major, minor
+                    if "features" in capabilityDefinition:
+                        featureStructList = capabilityDefinition["features"]
+                        # skip adding comment for empty requirements
+                        if len(featureStructList) == 1 and not list(featureStructList.values())[0]:
+                            continue
+                        featureTableItems.append(f"\t\t// {capabilityName}");
+                        # iterate over required features
+                        for featureStruct in featureStructList:
+                            structName = featureStruct[vkpdLen:]
+                            constructStruct(structName, featureStructInitNamesList, featureStructInitList)
+                            for feature in featureStructList[featureStruct]:
+                                featureTableItems.append(f"vk{structName}, {feature}")
+                            featureTableItems.append("")
+                    if "properties" in capabilityDefinition:
+                        propertyStructList = capabilityDefinition["properties"]
+                        propertyTableItems.append(f"\t\t// {capabilityName}");
+                        for propertyStruct in propertyStructList:
+                            structName = propertyStruct[vkpdLen:]
+                            constructStruct(structName, propertyStructInitNamesList, propertyStructInitList)
+                            for propName, propLimit in propertyStructList[propertyStruct].items():
+                                addPropertyEntries("vk" + structName, propName, propLimit, propertyTableItems)
+                            propertyTableItems.append("")
+                    if "extensions" in capabilityDefinition:
+                        extensionList = [n for n in capabilityDefinition["extensions"]]
+                    if "formats" in capabilityDefinition:
+                        formatsList = capabilityDefinition["formats"]
+
+            # remove empty lines at the end
+            featureTableItems.pop()
+            propertyTableItems.pop()
+
+            # remove "VP_KHR_" from roadmap profile name
+            if "VP_KHR_" in profileName:
+                profileName = profileName[7:]
+            # lower letters for all profile names
+            profileName = profileName.lower()
+
+            # template used to get both device features and device properties
+            structGetterTemplate = "\n"\
+            "\tVkPhysicalDevice{0}2 vk{0}2 = initVulkanStructure(&vk{2});\n"\
+            "\tauto& vk{0} = vk{0}2.{1};\n"\
+            "\tvki.getPhysicalDevice{0}2(pd, &vk{0}2);\n"
+
+            # construct function that will validate profile
+            stream.append(f"tcu::TestStatus validate_{profileName}(Context& context)")
+
+            stream.append("{\n"
+            "\tconst bool checkAlways = true;\n"
+            "\tbool oneOrMoreChecksFailed = false;\n"
+            "\tauto pd = context.getPhysicalDevice();\n"
+            "\tconst auto &vki = context.getInstanceInterface();\n"
+            "\tTestLog& log = context.getTestContext().getLog();\n")
+
+            stream.extend(featureStructInitList)
+            stream.append(structGetterTemplate.format("Features", "features", featureStructInitNamesList[-1]))
+            stream.extend(propertyStructInitList)
+            stream.append(structGetterTemplate.format("Properties", "properties", propertyStructInitNamesList[-1]))
+            if len(featureTableItems):
+                stream.append("\tconst std::vector<FeatureEntry> featureTable {")
+                stream.extend(["\t\tROADMAP_FEATURE_ITEM(" + f + ")," if ("," in f) else f for f in featureTableItems])
+                stream.append("\t};\n"
+                "\tfor (const auto &testedFeature : featureTable)\n"
+                "\t{\n"
+                "\t    if (!testedFeature.fieldPtr[0])\n"
+                "\t    {\n"
+                "\t        log << TestLog::Message\n"
+                "\t            << \"Feature \" << testedFeature.fieldName << \" is not supported\"\n"
+                "\t            << TestLog::EndMessage;\n"
+                "\t        oneOrMoreChecksFailed = true;\n"
+                "\t    }\n"
+                "\t}\n")
+            if len(propertyTableItems):
+                stream.append("\tconst std::vector<FeatureLimitTableItem> propertyTable {")
+                stream.extend(["\t\t{ PN(checkAlways), " + p + " }," if ("," in p) else p for p in propertyTableItems])
+                stream.append("\t};\n"
+                "\tfor (const auto& testedProperty : propertyTable)\n"
+                "\t    oneOrMoreChecksFailed |= !validateLimit(testedProperty, log);\n")
+            if len(extensionList):
+                stream.append("\tstd::vector<std::string> extensionList {")
+                stream.append('\t\t"' + '",\n\t\t"'.join(extensionList) + '"')
+                stream.append("\t};\n"
+                "\tconst auto deviceExtensions = enumerateDeviceExtensionProperties(vki, pd, nullptr);\n"
+                "\tfor (const auto& testedExtension : extensionList)\n"
+                "\t{\n"
+                "\t    if (isExtensionStructSupported(deviceExtensions, RequiredExtension(testedExtension)) ||\n"
+                "\t        context.isInstanceFunctionalitySupported(testedExtension))\n"
+                "\t        continue;\n"
+                "\t    log << TestLog::Message\n"
+                "\t        << testedExtension << \" is not supported\"\n"
+                "\t        << TestLog::EndMessage;\n"
+                "\t    oneOrMoreChecksFailed = true;\n"
+                "\t}")
+            if len(formatsList):
+                stream.append("\n\tstd::vector<FormatEntry> formatsList {")
+                for formatName, formatProperties in formatsList.items():
+                    formatProperties = formatProperties["VkFormatProperties"]
+                    linearTilingFeatures = formatProperties["linearTilingFeatures"]
+                    linearTilingFeatures = "0" if not linearTilingFeatures else linearTilingFeatures
+                    optimalTilingFeatures = formatProperties["optimalTilingFeatures"]
+                    optimalTilingFeatures = "0" if not optimalTilingFeatures else optimalTilingFeatures
+                    bufferFeatures = formatProperties["bufferFeatures"]
+                    bufferFeatures = "0" if not bufferFeatures else bufferFeatures
+                    stream.append(f"""\t\t{{ {formatName}, "{formatName}",
+            {{ {"|".join(linearTilingFeatures)},
+              {"|".join(optimalTilingFeatures)},
+              {"|".join(bufferFeatures)} }} }},""")
+                stream.append("\t};\n"
+                "\t\tVkFormatProperties supportedFormatPropertiess;\n"
+                "\t\tfor (const auto& [f, fn, fp] : formatsList)\n"
+                "\t\t{\n"
+                "\t\t    vki.getPhysicalDeviceFormatProperties(pd, f, &supportedFormatPropertiess);\n"
+                "\t\t    if (((fp.linearTilingFeatures & supportedFormatPropertiess.linearTilingFeatures) == fp.linearTilingFeatures) &&\n"
+                "\t\t        ((fp.optimalTilingFeatures & supportedFormatPropertiess.optimalTilingFeatures) == fp.optimalTilingFeatures) &&\n"
+                "\t\t        ((fp.bufferFeatures & supportedFormatPropertiess.bufferFeatures) == fp.bufferFeatures))\n"
+                "\t\t        continue;\n"
+                "\t\t    log << TestLog::Message\n"
+                "\t\t        << \"Required format properties for \" << fn << \" are not supported\"\n"
+                "\t\t        << TestLog::EndMessage;\n"
+                "\t\t    oneOrMoreChecksFailed = true;\n"
+                "\t\t}\n")
+
+            stream.append("\n"
+            "\tif (oneOrMoreChecksFailed)\n"
+            "\t    TCU_THROW(NotSupportedError, \"Profile not supported\");\n"
+            "\treturn tcu::TestStatus::pass(\"Profile supported\");\n}\n")
+
+            profilesList.append(f"\t{{ \"{profileName}\", checkApiVersionSupport<{highestMajor}, {highestMinor}>, validate_{profileName} }},")
+
+    # save list of all callbacks
+    stream.append("static const std::vector<ProfileEntry> profileEntries {")
+    stream.extend(profilesList)
+    stream.append("};")
+
+    writeInlFile(inlFileName, INL_HEADER, stream)
+
 def writeConformanceVersions(api, filename):
     logging.debug("Preparing to generate " + filename)
     # get list of all vulkan/vulkansc tags from git
@@ -4064,8 +4324,6 @@ if __name__ == "__main__":
     writeFuncPtrInterfaceImpl                   (api, os.path.join(outputPath, "vkPlatformDriverImpl.inl"), platformFuncs, "PlatformDriver")
     writeFuncPtrInterfaceImpl                   (api, os.path.join(outputPath, "vkInstanceDriverImpl.inl"), instanceFuncs, "InstanceDriver")
     writeFuncPtrInterfaceImpl                   (api, os.path.join(outputPath, "vkDeviceDriverImpl.inl"), deviceFuncs, "DeviceDriver")
-    if args.api=='SC':
-        writeFuncPtrInterfaceSCImpl             (api, os.path.join(outputPath, "vkDeviceDriverSCImpl.inl"), deviceFuncs, "DeviceDriverSC")
     writeStrUtilProto                           (api, os.path.join(outputPath, "vkStrUtil.inl"))
     writeStrUtilImpl                            (api, os.path.join(outputPath, "vkStrUtilImpl.inl"))
     writeRefUtilProto                           (api, os.path.join(outputPath, "vkRefUtil.inl"))
@@ -4086,6 +4344,12 @@ if __name__ == "__main__":
     writeEntryPointValidation                   (api, os.path.join(outputPath, "vkEntryPointValidation.inl"))
     writeGetDeviceProcAddr                      (api, os.path.join(outputPath, "vkGetDeviceProcAddr.inl"))
     #writeConformanceVersions                    (api, os.path.join(outputPath, "vkKnownConformanceVersions.inl"))
+    if args.api=='SC':
+        writeFuncPtrInterfaceSCImpl(api, os.path.join(outputPath, "vkDeviceDriverSCImpl.inl"), deviceFuncs, "DeviceDriverSC")
+    else:
+        profileList = [os.path.join(VULKAN_XML_DIR, "profiles", "VP_KHR_roadmap.json")]
+        #profileList += [os.path.join(VULKAN_XML_DIR, "profiles", "VP_ANDROID_baseline_2022.json"]
+        writeProfileTests(os.path.join(outputPath, "vkProfileTests.inl"), profileList)
 
     # NOTE: when new files are generated then they should also be added to the
     # vk-gl-cts\external\vulkancts\framework\vulkan\CMakeLists.txt outputs list
