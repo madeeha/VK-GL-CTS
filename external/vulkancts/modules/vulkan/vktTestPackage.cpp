@@ -112,6 +112,7 @@
 #include "vktFragmentShaderInterlockTests.hpp"
 #include "vktShaderClockTests.hpp"
 #include "vktShaderExpectAssumeTests.hpp"
+#include "vktShaderHelperInvocationsTests.hpp"
 #include "vktModifiersTests.hpp"
 #include "vktRayTracingTests.hpp"
 #include "vktRayQueryTests.hpp"
@@ -193,11 +194,11 @@ private:
     tcu::WaiverUtil m_waiverMechanism;
 
     TestInstance *m_instance; //!< Current test case instance
-    std::vector<std::string> m_testsForSubprocess;
     tcu::TestRunStatus m_status;
 
 #ifdef CTS_USES_VULKANSC
     int m_subprocessCount;
+    std::vector<std::string> m_testsForSubprocess;
 
     std::unique_ptr<vksc_server::ipc::Parent> m_parentIPC;
     std::vector<DetailedSubprocessTestCount> m_detailedSubprocessTestCount;
@@ -454,8 +455,8 @@ void TestCaseExecutor::init(tcu::TestCase *testCase, const std::string &casePath
             m_context->getTestContext().getLog().supressLogging(true);
         }
         m_subprocessCount = currentSubprocessCount;
-#endif // CTS_USES_VULKANSC
         m_testsForSubprocess.push_back(casePath);
+#endif // CTS_USES_VULKANSC
     }
 
     m_resourceInterface->initTestCase(casePath);
@@ -1142,6 +1143,7 @@ void createGlslTests(tcu::TestCaseGroup *glslTests)
     glslTests->addChild(shaderexecutor::createOpaqueTypeIndexingTests(testCtx));
     glslTests->addChild(shaderexecutor::createAtomicOperationTests(testCtx));
     glslTests->addChild(shaderexecutor::createShaderClockTests(testCtx));
+    glslTests->addChild(shaderexecutor::createShaderHelperInvocationsTests(testCtx));
 
 #ifndef CTS_USES_VULKANSC
     // Amber GLSL tests.

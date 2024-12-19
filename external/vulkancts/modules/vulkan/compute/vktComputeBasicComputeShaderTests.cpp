@@ -2954,10 +2954,10 @@ tcu::TestStatus DispatchBaseTestInstance::iterate(void)
     pipeline.setPipelineCreateFlags(VK_PIPELINE_CREATE_DISPATCH_BASE);
 
 #ifndef CTS_USES_VULKANSC
+    VkPipelineCreateFlags2CreateInfoKHR pipelineFlags2CreateInfo = initVulkanStructure();
     if (m_useMaintenance5)
     {
-        VkPipelineCreateFlags2CreateInfoKHR pipelineFlags2CreateInfo = initVulkanStructure();
-        pipelineFlags2CreateInfo.flags                               = VK_PIPELINE_CREATE_2_DISPATCH_BASE_BIT_KHR;
+        pipelineFlags2CreateInfo.flags = VK_PIPELINE_CREATE_2_DISPATCH_BASE_BIT_KHR;
         pipeline.setPipelineCreatePNext(&pipelineFlags2CreateInfo);
         pipeline.setPipelineCreateFlags(0);
     }
@@ -4595,6 +4595,8 @@ enum InstType
     SPECCONSTANT,
 };
 
+#ifndef CTS_USES_VULKANSC
+
 class ReplicatedCompositesTest : public vkt::TestCase
 {
 public:
@@ -5111,6 +5113,7 @@ tcu::TestStatus ReplicatedCompositesTestInstance::iterate(void)
     }
     return tcu::TestStatus::pass("Compute succeeded");
 }
+#endif // ifndef CTS_USES_VULKANSC
 
 } // namespace
 
@@ -5307,6 +5310,8 @@ tcu::TestCaseGroup *createBasicComputeShaderTests(tcu::TestContext &testCtx,
     {
         basicComputeTests->addChild(
             cts_amber::createAmberTestCase(testCtx, "write_ssbo_array", "", "compute", "write_ssbo_array.amber"));
+        basicComputeTests->addChild(cts_amber::createAmberTestCase(testCtx, "atomic_barrier_sum_small", "", "compute",
+                                                                   "atomic_barrier_sum_small.amber"));
         basicComputeTests->addChild(
             cts_amber::createAmberTestCase(testCtx, "branch_past_barrier", "", "compute", "branch_past_barrier.amber"));
         basicComputeTests->addChild(cts_amber::createAmberTestCase(
@@ -5334,7 +5339,7 @@ tcu::TestCaseGroup *createBasicComputeShaderTests(tcu::TestContext &testCtx,
             basicComputeTests->addChild(testCase);
         }
     }
-#endif
+#endif // ifndef CTS_USES_VULKANSC
 
     return basicComputeTests.release();
 }

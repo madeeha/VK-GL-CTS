@@ -319,33 +319,33 @@ PACKAGES = [
     GitRepo(
         "https://github.com/KhronosGroup/SPIRV-Tools.git",
         "git@github.com:KhronosGroup/SPIRV-Tools.git",
-        "44936c4a9d42f1c67e34babb5792adf5bce7f76b",
+        "3fb52548bc8a68d349d31e21bd4e80e3d953e87c",
         "spirv-tools"),
     GitRepo(
         "https://github.com/KhronosGroup/glslang.git",
         "git@github.com:KhronosGroup/glslang.git",
-        "c5b76b78c9dec95251e9c1840a671e19bf61abe3",
+        "a0995c49ebcaca2c6d3b03efbabf74f3843decdb",
         "glslang",
         removeTags = ["main-tot", "master-tot"]),
     GitRepo(
         "https://github.com/KhronosGroup/SPIRV-Headers.git",
         "git@github.com:KhronosGroup/SPIRV-Headers.git",
-        "2a9b6f951c7d6b04b6c21fe1bf3f475b68b84801",
+        "36d5e2ddaa54c70d2f29081510c66f4fc98e5e53",
         "spirv-headers"),
     GitRepo(
         "https://github.com/KhronosGroup/Vulkan-Docs.git",
         "git@github.com:KhronosGroup/Vulkan-Docs.git",
-        "486e4b289053a7d64784e7ce791711843c60c235",
+        "c7a3955e47d223c6a37fb29e2061c973eec98d0a",
         "vulkan-docs"),
     GitRepo(
         "https://github.com/KhronosGroup/Vulkan-ValidationLayers.git",
         "git@github.com:KhronosGroup/Vulkan-ValidationLayers.git",
-        "9a46ae006fa5c92e2d2af7944187f7794210844b",
+        "902f3cf8d51e76be0c0deb4be39c6223abebbae2",
         "vulkan-validationlayers"),
     GitRepo(
         "https://github.com/google/amber.git",
         "git@github.com:google/amber.git",
-        "67fea651b886460d7b72295e680528c059bbbe40",
+        "1ec5e96db7e0343d045a52c590e30eba154f74a8",
         "amber"),
     GitRepo(
         "https://github.com/open-source-parsers/jsoncpp.git",
@@ -358,8 +358,21 @@ PACKAGES = [
     GitRepo(
         "https://github.com/Igalia/vk_video_samples.git",
         "git@github.com:Igalia/vk_video_samples.git",
-        "4b5c49d2c3ea7e9af6b7cce243780c62270eae77",
+        "45fe88b456c683120138f052ea81f0a958ff3ec4",
         "nvidia-video-samples"),
+    # NOTE: Temporary vk_video_samples repo and branch where AV1
+    # encoder library is being developed by NVidia.
+    GitRepo(
+        "https://github.com/nvpro-samples/vk_video_samples.git",
+        "git@github.com:nvpro-samples/vk_video_samples.git",
+        "d78acbefe82183d00634a95705885a7cbabdf20b",
+        "vk-video-samples"),
+    # NOTE: Temporary video generator repo .
+    GitRepo(
+        "https://github.com/Igalia/video_generator.git",
+        "git@github.com:Igalia/video_generator.git",
+        "426300e12a5cc5d4676807039a1be237a2b68187",
+        "video_generator"),
 ]
 
 def parseArgs ():
