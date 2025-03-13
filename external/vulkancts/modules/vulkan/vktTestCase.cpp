@@ -106,6 +106,7 @@ vector<string> filterExtensions(const vector<VkExtensionProperties> &extensions)
         "VK_NV_raw_access_chains",
         "VK_NV_linear_color_attachment",
         "VK_NV_cooperative_matrix2",
+        "VK_NV_cooperative_vector",
     };
 
     const char *exclusions[] = {"VK_EXT_device_address_binding_report", "VK_EXT_device_memory_report"};
@@ -517,6 +518,12 @@ public:
     const VkPhysicalDeviceVulkan14Features &getVulkan14Features(void) const
     {
         return m_deviceFeatures.getVulkan14Features();
+    }
+#endif // CTS_USES_VULKANSC
+#ifdef CTS_USES_VULKANSC
+    const VkPhysicalDeviceVulkanSC10Features &getVulkanSC10Features(void) const
+    {
+        return m_deviceFeatures.getVulkanSC10Features();
     }
 #endif // CTS_USES_VULKANSC
 

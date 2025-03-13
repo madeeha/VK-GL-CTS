@@ -311,7 +311,7 @@ struct EncodeTestParam
     Option encoderOptions;
 } g_EncodeTests[] = {
     {TEST_TYPE_H264_ENCODE_I,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -324,7 +324,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::Default},
     {TEST_TYPE_H264_ENCODE_RC_VBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0, 1},
@@ -337,7 +337,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::UseVariableBitrateControl},
     {TEST_TYPE_H264_ENCODE_RC_CBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -350,7 +350,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseConstantBitrateControl},
     {TEST_TYPE_H264_ENCODE_RC_DISABLE,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -363,7 +363,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::DisableRateControl},
     {TEST_TYPE_H264_ENCODE_QUALITY_LEVEL,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -376,7 +376,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseQualityLevel},
     {TEST_TYPE_H264_ENCODE_QM_DELTA_RC_VBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -389,7 +389,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::UseVariableBitrateControl)},
     {TEST_TYPE_H264_ENCODE_QM_DELTA_RC_CBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -402,7 +402,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::UseConstantBitrateControl)},
     {TEST_TYPE_H264_ENCODE_QM_DELTA_RC_DISABLE,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -415,7 +415,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::DisableRateControl)},
     {TEST_TYPE_H264_ENCODE_QM_DELTA,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -428,7 +428,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseDeltaMap},
     {TEST_TYPE_H264_ENCODE_QM_EMPHASIS_CBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      2,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -441,7 +441,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseEmphasisMap | Option::UseConstantBitrateControl)},
     {TEST_TYPE_H264_ENCODE_QM_EMPHASIS_VBR,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      2,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -454,7 +454,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseEmphasisMap | Option::UseVariableBitrateControl)},
     {TEST_TYPE_H264_ENCODE_USAGE,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -467,7 +467,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseEncodeUsage},
     {TEST_TYPE_H264_ENCODE_I_P,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -480,7 +480,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::Default},
     {TEST_TYPE_H264_ENCODE_I_P_NOT_MATCHING_ORDER,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -493,7 +493,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::SwapOrder},
     {TEST_TYPE_H264_ENCODE_QUERY_RESULT_WITH_STATUS,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -506,7 +506,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::UseStatusQueries},
     {TEST_TYPE_H264_ENCODE_INLINE_QUERY,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -519,7 +519,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseInlineQueries},
     {TEST_TYPE_H264_ENCODE_RESOURCES_WITHOUT_PROFILES,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -532,7 +532,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::ResourcesWithoutProfiles},
     {TEST_TYPE_H264_ENCODE_RESOLUTION_CHANGE_DPB,
-     CLIP_G,
+     CLIP_H264_ENC_G,
      2,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -545,7 +545,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::ResolutionChange},
     {TEST_TYPE_H264_I_P_B_13,
-     CLIP_E,
+     CLIP_H264_ENC_E,
      2,
      {IDR_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME,
       B_FRAME, P_FRAME},
@@ -582,7 +582,7 @@ struct EncodeTestParam
       refs<std::vector<uint8_t>>({3, 2}, {4, 3}), refs<std::vector<uint8_t>>({4, 3}, {})},
      /* encoderOptions */ Option::Default},
     {TEST_TYPE_H265_ENCODE_I,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -595,7 +595,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::Default},
     {TEST_TYPE_H265_ENCODE_RC_VBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0, 1},
@@ -608,7 +608,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::UseVariableBitrateControl},
     {TEST_TYPE_H265_ENCODE_RC_CBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -621,7 +621,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseConstantBitrateControl},
     {TEST_TYPE_H265_ENCODE_RC_DISABLE,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -634,7 +634,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::DisableRateControl},
     {TEST_TYPE_H265_ENCODE_QUALITY_LEVEL,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -647,7 +647,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseQualityLevel},
     {TEST_TYPE_H265_ENCODE_QM_DELTA_RC_VBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -660,7 +660,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::UseVariableBitrateControl)},
     {TEST_TYPE_H265_ENCODE_QM_DELTA_RC_CBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -673,7 +673,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::UseConstantBitrateControl)},
     {TEST_TYPE_H265_ENCODE_QM_DELTA_RC_DISABLE,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -686,7 +686,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseDeltaMap | Option::DisableRateControl)},
     {TEST_TYPE_H265_ENCODE_QM_DELTA,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      3,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -699,7 +699,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseDeltaMap},
     {TEST_TYPE_H265_ENCODE_QM_EMPHASIS_CBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      2,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -712,7 +712,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseEmphasisMap | Option::UseConstantBitrateControl)},
     {TEST_TYPE_H265_ENCODE_QM_EMPHASIS_VBR,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      2,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -725,7 +725,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ static_cast<Option>(Option::UseEmphasisMap | Option::UseVariableBitrateControl)},
     {TEST_TYPE_H265_ENCODE_USAGE,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -738,7 +738,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseEncodeUsage},
     {TEST_TYPE_H265_ENCODE_I_P,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -751,7 +751,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::Default},
     {TEST_TYPE_H265_ENCODE_I_P_NOT_MATCHING_ORDER,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -764,7 +764,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::SwapOrder},
     {TEST_TYPE_H265_ENCODE_QUERY_RESULT_WITH_STATUS,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -777,7 +777,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::UseStatusQueries},
     {TEST_TYPE_H265_ENCODE_INLINE_QUERY,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME},
      /* frameIdx */ {0},
@@ -790,7 +790,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {})},
      /* encoderOptions */ Option::UseInlineQueries},
     {TEST_TYPE_H265_ENCODE_RESOURCES_WITHOUT_PROFILES,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      1,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -803,7 +803,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::ResourcesWithoutProfiles},
     {TEST_TYPE_H265_ENCODE_RESOLUTION_CHANGE_DPB,
-     CLIP_H,
+     CLIP_H265_ENC_H,
      2,
      {IDR_FRAME, P_FRAME},
      /* frameIdx */ {0, 1},
@@ -816,7 +816,7 @@ struct EncodeTestParam
      /* frameReferences */ {refs<std::vector<uint8_t>>({}, {}), refs<std::vector<uint8_t>>({0}, {})},
      /* encoderOptions */ Option::ResolutionChange},
     {TEST_TYPE_H265_I_P_B_13,
-     CLIP_F,
+     CLIP_H265_ENC_F,
      2,
      {IDR_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME, B_FRAME, P_FRAME, B_FRAME,
       B_FRAME, P_FRAME},
@@ -1314,9 +1314,9 @@ void copyBufferToImage(const DeviceInterface &vk, VkDevice device, VkQueue queue
 
     const VkCommandBufferBeginInfo cmdBufferBeginInfo = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, // VkStructureType sType;
-        DE_NULL,                                     // const void* pNext;
+        nullptr,                                     // const void* pNext;
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, // VkCommandBufferUsageFlags flags;
-        (const VkCommandBufferInheritanceInfo *)DE_NULL,
+        (const VkCommandBufferInheritanceInfo *)nullptr,
     };
 
     const VkBufferImageCopy copyRegion = {
@@ -1366,10 +1366,10 @@ void copyBufferToImage(const DeviceInterface &vk, VkDevice device, VkQueue queue
 
     VK_CHECK(vk.beginCommandBuffer(*cmdBuffer, &cmdBufferBeginInfo));
     vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, (VkDependencyFlags)0,
-                          0, (const VkMemoryBarrier *)DE_NULL, 1, &preBufferBarrier, 1, &preImageBarrier);
+                          0, (const VkMemoryBarrier *)nullptr, 1, &preBufferBarrier, 1, &preImageBarrier);
     vk.cmdCopyBufferToImage(*cmdBuffer, buffer, destImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
     vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, destImageDstStageFlags, (VkDependencyFlags)0, 0,
-                          (const VkMemoryBarrier *)DE_NULL, 0, (const VkBufferMemoryBarrier *)DE_NULL, 1,
+                          (const VkMemoryBarrier *)nullptr, 0, (const VkBufferMemoryBarrier *)nullptr, 1,
                           &postImageBarrier);
     VK_CHECK(vk.endCommandBuffer(*cmdBuffer));
 
@@ -1377,14 +1377,14 @@ void copyBufferToImage(const DeviceInterface &vk, VkDevice device, VkQueue queue
 
     const VkSubmitInfo submitInfo = {
         VK_STRUCTURE_TYPE_SUBMIT_INFO, // VkStructureType sType;
-        DE_NULL,                       // const void* pNext;
+        nullptr,                       // const void* pNext;
         0u,                            // uint32_t waitSemaphoreCount;
-        DE_NULL,                       // const VkSemaphore* pWaitSemaphores;
+        nullptr,                       // const VkSemaphore* pWaitSemaphores;
         &pipelineStageFlags,           // const VkPipelineStageFlags* pWaitDstStageMask;
         1u,                            // uint32_t commandBufferCount;
         &cmdBuffer.get(),              // const VkCommandBuffer* pCommandBuffers;
         0u,                            // uint32_t signalSemaphoreCount;
-        DE_NULL                        // const VkSemaphore* pSignalSemaphores;
+        nullptr                        // const VkSemaphore* pSignalSemaphores;
     };
 
     try
@@ -1790,15 +1790,15 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
 
         VkVideoFormatPropertiesKHR videoFormatPropertiesKHR = {};
         videoFormatPropertiesKHR.sType                      = VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR;
-        videoFormatPropertiesKHR.pNext                      = DE_NULL;
+        videoFormatPropertiesKHR.pNext                      = nullptr;
 
         VkVideoFormatQuantizationMapPropertiesKHR quantizationMapPropertiesKHR = {};
         quantizationMapPropertiesKHR.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR;
-        quantizationMapPropertiesKHR.pNext = DE_NULL;
+        quantizationMapPropertiesKHR.pNext = nullptr;
 
         VkVideoFormatH265QuantizationMapPropertiesKHR H265QuantizationMapFormatProperty = {};
         H265QuantizationMapFormatProperty.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_H265_QUANTIZATION_MAP_PROPERTIES_KHR;
-        H265QuantizationMapFormatProperty.pNext = DE_NULL;
+        H265QuantizationMapFormatProperty.pNext = nullptr;
 
         vector<VkVideoFormatPropertiesKHR> videoFormatProperties;
         vector<VkVideoFormatQuantizationMapPropertiesKHR> quantizationMapProperties;
@@ -1806,7 +1806,7 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
         de::MovePtr<vector<VkFormat>> result;
 
         VK_CHECK(vki.getPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, &videoFormatInfo,
-                                                               &videoFormatPropertiesCount, DE_NULL));
+                                                               &videoFormatPropertiesCount, nullptr));
 
         videoFormatProperties.resize(videoFormatPropertiesCount, videoFormatPropertiesKHR);
         quantizationMapProperties.resize(videoFormatPropertiesCount, quantizationMapPropertiesKHR);
@@ -1851,7 +1851,7 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
             getBufferSize(quantizationImageFormat, quantizationMapExtent.width, quantizationMapExtent.height);
 
         const VkBufferCreateInfo quantizationMapBufferCreateInfo = makeBufferCreateInfo(
-            quantizationMapBufferSize, quantizationMapBufferUsageFlags, transaferQueueFamilyIndices, 0, DE_NULL);
+            quantizationMapBufferSize, quantizationMapBufferUsageFlags, transaferQueueFamilyIndices, 0, nullptr);
 
         BufferWithMemory quantizationMapBuffer(videoDeviceDriver, videoDevice, getAllocator(),
                                                quantizationMapBufferCreateInfo,
@@ -2164,6 +2164,18 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
                 currentCodedExtent.height /= 2;
             }
 
+            if (currentCodedExtent.width > videoCapabilities->maxCodedExtent.width ||
+                currentCodedExtent.height > videoCapabilities->maxCodedExtent.height)
+            {
+                TCU_THROW(NotSupportedError, "Required dimensions exceed maxCodedExtent");
+            }
+
+            if (currentCodedExtent.width < videoCapabilities->minCodedExtent.width ||
+                currentCodedExtent.height < videoCapabilities->minCodedExtent.height)
+            {
+                TCU_THROW(NotSupportedError, "Required dimensions are smaller than minCodedExtent");
+            }
+
             const VkImageCreateInfo imageCreateInfo =
                 makeImageCreateInfo(imageFormat, currentCodedExtent,
                                     resourcesWithoutProfiles ? VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR : 0,
@@ -2391,8 +2403,8 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
     DE_ASSERT(videoEncodeRateControlInfoPtr);
 
     const de::MovePtr<VkVideoEncodeRateControlInfoKHR> videoEncodeRateControlInfo = getVideoEncodeRateControlInfo(
-        disableRateControl ? DE_NULL : videoEncodeRateControlInfoPtr, rateControlMode,
-        (useConstantBitrate || useVariableBitrate) ? videoEncodeRateControlLayerInfo.get() : DE_NULL);
+        disableRateControl ? nullptr : videoEncodeRateControlInfoPtr, rateControlMode,
+        (useConstantBitrate || useVariableBitrate) ? videoEncodeRateControlLayerInfo.get() : nullptr);
     // End coding
     const VkVideoEndCodingInfoKHR videoEndCodingInfo = {
         VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR, //  VkStructureType sType;
@@ -2442,7 +2454,7 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
                 *videoEncodeSession,
                 resolutionChange ? videoEncodeSessionParameters[GOPIdx].get() : videoEncodeSessionParameters[0].get(),
                 dpbSlots, &dpbImageVideoReferenceSlots[0],
-                (activeRateControl && NALIdx > 0) ? videoEncodeRateControlInfo.get() : DE_NULL);
+                (activeRateControl && NALIdx > 0) ? videoEncodeRateControlInfo.get() : nullptr);
 
             videoDeviceDriver.cmdBeginVideoCodingKHR(encodeCmdBuffer, videoBeginCodingFrameInfoKHR.get());
 
@@ -2644,7 +2656,7 @@ tcu::TestStatus VideoEncodeTestInstance::iterate(void)
             videoEncodeFrameInfos.push_back(
                 getVideoEncodeInfo(videoEncodePictureInfoPtr, encodeFlags, *encodeBuffer, dstBufferOffset,
                                    (*imagePictureResourceVector[srcPictureResourceIdx]), setupReferenceSlotPtr,
-                                   refsCount, (refsPool == 0) ? DE_NULL : referenceSlots));
+                                   refsCount, (refsPool == 0) ? nullptr : referenceSlots));
 
             if (!useInlineQueries)
                 videoDeviceDriver.cmdBeginQuery(encodeCmdBuffer, encodeQueryPool.get(), queryId, 0);

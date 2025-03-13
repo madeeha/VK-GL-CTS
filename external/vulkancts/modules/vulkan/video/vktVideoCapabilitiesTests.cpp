@@ -466,6 +466,9 @@ protected:
     void validateExtensionProperties(const VkExtensionProperties &extensionProperties,
                                      const VkExtensionProperties &extensionPropertiesSecond);
     CaseDef m_caseDef;
+
+private:
+    bool videoMaintenance2Support;
 };
 
 VideoCapabilitiesQueryTestInstance::VideoCapabilitiesQueryTestInstance(Context &context, const CaseDef &data)
@@ -473,6 +476,8 @@ VideoCapabilitiesQueryTestInstance::VideoCapabilitiesQueryTestInstance(Context &
     , m_caseDef(data)
 {
     DE_UNREF(m_caseDef);
+
+    videoMaintenance2Support = context.isDeviceFunctionalitySupported("VK_KHR_video_maintenance2");
 }
 
 VideoCapabilitiesQueryTestInstance::~VideoCapabilitiesQueryTestInstance(void)
@@ -574,6 +579,14 @@ void VideoCapabilitiesQueryTestInstance::validateVideoEncodeCapabilities(
 
     if (videoEncodeCapabilitiesKHR.maxQualityLevels == 0)
         TCU_FAIL("videoEncodeCapabilitiesKHR.maxQualityLevels is zero. Implementations must report at least 1.");
+
+    if (videoMaintenance2Support &&
+        (videoEncodeCapabilitiesKHR.rateControlModes & VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR) == 0)
+    {
+        TCU_FAIL("videoEncodeCapabilitiesKHR.rateControlModes doesn't contain "
+                 "VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR "
+                 "but VK_KHR_video_maintenance2 is supported");
+    }
 }
 
 void VideoCapabilitiesQueryTestInstance::validateExtensionProperties(
@@ -1015,7 +1028,7 @@ tcu::TestStatus VideoCapabilitiesQueryAV1EncodeTestInstance::iterate(void)
     const VkVideoCodecOperationFlagBitsKHR videoCodecOperation = VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR;
     const VkVideoEncodeAV1ProfileInfoKHR videoProfileOperation = {
         VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_PROFILE_INFO_KHR, //  VkStructureType sType;
-        DE_NULL,                                             //  const void* pNext;
+        nullptr,                                             //  const void* pNext;
         STD_VIDEO_AV1_PROFILE_MAIN,                          //  StdVideoAV1ProfileIdc stdProfileIdc;
     };
     const VkVideoProfileInfoKHR videoProfile = {
@@ -1043,7 +1056,7 @@ tcu::TestStatus VideoCapabilitiesQueryAV1EncodeTestInstance::iterate(void)
         videoEncodeCapabilities[ndx].sType    = VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR;
         videoEncodeCapabilities[ndx].pNext    = &videoEncodeAV1Capabilities[ndx];
         videoEncodeAV1Capabilities[ndx].sType = VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_CAPABILITIES_KHR;
-        videoEncodeAV1Capabilities[ndx].pNext = DE_NULL;
+        videoEncodeAV1Capabilities[ndx].pNext = nullptr;
 
         VkResult result =
             vk.getPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, &videoProfile, &videoCapabilites[ndx]);
@@ -1279,6 +1292,9 @@ VideoCapabilitiesQueryTestCase::~VideoCapabilitiesQueryTestCase(void)
 void VideoCapabilitiesQueryTestCase::checkSupport(Context &context) const
 {
     context.requireDeviceFunctionality("VK_KHR_video_queue");
+
+    if (context.isDeviceFunctionalitySupported("VK_KHR_video_maintenance2"))
+        context.requireDeviceFunctionality("VK_KHR_video_maintenance2");
 
     switch (m_caseDef.testType)
     {
