@@ -5135,6 +5135,15 @@ dEQP-VK.texture.mipmap.min_lod_gather.minlod_1_1.component_0
 dEQP-VK.texture.mipmap.min_lod_gather.minlod_1_1.component_1
 dEQP-VK.texture.mipmap.min_lod_gather.minlod_1_1.component_2
 dEQP-VK.texture.mipmap.min_lod_gather.minlod_1_1.component_3
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r16g16b16a16_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r32_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r32g32b32a32_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r8g8b8a8_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r16g16b16a16_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r32_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r32g32b32a32_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_unorm
 dEQP-VK.texture.multisample.atomic.storage_image_r32i
 dEQP-VK.texture.multisample.atomic.storage_image_r32ui
 dEQP-VK.texture.multisample.atomic.storage_image_r64i

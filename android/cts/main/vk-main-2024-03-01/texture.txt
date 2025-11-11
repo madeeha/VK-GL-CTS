@@ -689,6 +689,15 @@ dEQP-VK.texture.filtering.cube.sizes.8x8.nearest_mipmap_linear.seamless
 dEQP-VK.texture.filtering.cube.sizes.8x8.nearest_mipmap_nearest.non_seamless
 dEQP-VK.texture.filtering.cube.sizes.8x8.nearest_mipmap_nearest.seamless
 dEQP-VK.texture.mipmap.cubemap.misc.projected_derivatives
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r16g16b16a16_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r32_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r32g32b32a32_uint
+dEQP-VK.texture.misc.max_elements.storage_texel_buffer_r8g8b8a8_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r16g16b16a16_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r32_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r32g32b32a32_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_uint
+dEQP-VK.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_unorm
 dEQP-VK.texture.multisample.atomic.storage_image_r64i
 dEQP-VK.texture.multisample.atomic.storage_image_r64ui
 dEQP-VK.texture.swizzle.component_mapping.depth.d16_unorm_2d_npot_oooo

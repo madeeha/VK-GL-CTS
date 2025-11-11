@@ -40,6 +40,8 @@ set(DEQP_VK_TEXTURE_SRCS
 	vktTextureTexelBufferTests.hpp
 	vktTextureTexelOffsetTests.cpp
 	vktTextureTexelOffsetTests.hpp
+	vktTextureMiscTests.cpp
+	vktTextureMiscTests.hpp
 	)
 
 PCH(DEQP_VK_TEXTURE_SRCS ../pch.cpp)

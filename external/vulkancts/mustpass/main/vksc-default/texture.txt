@@ -4652,6 +4652,15 @@ dEQP-VKSC.texture.mipmap.cubemap.projected.nearest_nearest_linear_repeat
 dEQP-VKSC.texture.mipmap.cubemap.projected.nearest_nearest_nearest_clamp
 dEQP-VKSC.texture.mipmap.cubemap.projected.nearest_nearest_nearest_mirror
 dEQP-VKSC.texture.mipmap.cubemap.projected.nearest_nearest_nearest_repeat
+dEQP-VKSC.texture.misc.max_elements.storage_texel_buffer_r16g16b16a16_uint
+dEQP-VKSC.texture.misc.max_elements.storage_texel_buffer_r32_uint
+dEQP-VKSC.texture.misc.max_elements.storage_texel_buffer_r32g32b32a32_uint
+dEQP-VKSC.texture.misc.max_elements.storage_texel_buffer_r8g8b8a8_uint
+dEQP-VKSC.texture.misc.max_elements.uniform_texel_buffer_r16g16b16a16_uint
+dEQP-VKSC.texture.misc.max_elements.uniform_texel_buffer_r32_uint
+dEQP-VKSC.texture.misc.max_elements.uniform_texel_buffer_r32g32b32a32_uint
+dEQP-VKSC.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_uint
+dEQP-VKSC.texture.misc.max_elements.uniform_texel_buffer_r8g8b8a8_unorm
 dEQP-VKSC.texture.shadow.1d.linear.always_d16_unorm
 dEQP-VKSC.texture.shadow.1d.linear.always_d16_unorm_s8_uint
 dEQP-VKSC.texture.shadow.1d.linear.always_d24_unorm_s8_uint
