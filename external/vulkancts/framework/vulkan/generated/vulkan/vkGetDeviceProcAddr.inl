@@ -102,6 +102,9 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 		"vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM",
 		"vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM",
 
+		// "VK_ARM_performance_counters_by_region
+		"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
+
 		// "VK_ARM_tensors
 		"vkBindTensorMemoryARM",
 		"vkCmdCopyTensorARM",
@@ -139,6 +142,9 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 		// "VK_EXT_conditional_rendering
 		"vkCmdBeginConditionalRenderingEXT",
 		"vkCmdEndConditionalRenderingEXT",
+
+		// "VK_EXT_custom_resolve
+		"vkCmdBeginCustomResolveEXT",
 
 		// "VK_EXT_debug_marker
 		"vkCmdDebugMarkerBeginEXT",
@@ -313,6 +319,10 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 
 		// "VK_EXT_line_rasterization
 		"vkCmdSetLineStippleEXT",
+
+		// "VK_EXT_memory_decompression
+		"vkCmdDecompressMemoryEXT",
+		"vkCmdDecompressMemoryIndirectCountEXT",
 
 		// "VK_EXT_mesh_shader
 		"vkCmdDrawMeshTasksEXT",
@@ -536,6 +546,10 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 		"vkCmdCopyImageToBuffer2KHR",
 		"vkCmdResolveImage2KHR",
 
+		// "VK_KHR_copy_memory_indirect
+		"vkCmdCopyMemoryIndirectKHR",
+		"vkCmdCopyMemoryToImageIndirectKHR",
+
 		// "VK_KHR_create_renderpass2
 		"vkCmdBeginRenderPass2KHR",
 		"vkCmdEndRenderPass2KHR",
@@ -657,6 +671,9 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 
 		// "VK_KHR_maintenance1
 		"vkTrimCommandPoolKHR",
+
+		// "VK_KHR_maintenance10
+		"vkCmdEndRendering2KHR",
 
 		// "VK_KHR_maintenance3
 		"vkGetDescriptorSetLayoutSupportKHR",
@@ -945,6 +962,15 @@ tcu::TestStatus        testGetDeviceProcAddr        (Context& context)
 		"vkCmdBindShadingRateImageNV",
 		"vkCmdSetCoarseSampleOrderNV",
 		"vkCmdSetViewportShadingRatePaletteNV",
+
+		// "VK_OHOS_external_memory
+		"vkGetMemoryNativeBufferOHOS",
+		"vkGetNativeBufferPropertiesOHOS",
+
+		// "VK_OHOS_native_buffer
+		"vkAcquireImageOHOS",
+		"vkGetSwapchainGrallocUsageOHOS",
+		"vkQueueSignalReleaseImageOHOS",
 
 		// "VK_OHOS_surface
 		"vkCreateSurfaceOHOS",

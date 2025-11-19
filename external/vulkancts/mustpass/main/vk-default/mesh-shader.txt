@@ -1890,6 +1890,7 @@ dEQP-VK.mesh_shader.ext.misc.single_line
 dEQP-VK.mesh_shader.ext.misc.single_point
 dEQP-VK.mesh_shader.ext.misc.single_point_default_size
 dEQP-VK.mesh_shader.ext.misc.single_triangle
+dEQP-VK.mesh_shader.ext.misc.work_group_ordering
 dEQP-VK.mesh_shader.ext.pipeline.builtin.fast_lib.clip_distance
 dEQP-VK.mesh_shader.ext.pipeline.builtin.fast_lib.clip_distance_mix
 dEQP-VK.mesh_shader.ext.pipeline.builtin.fast_lib.cull_distance
