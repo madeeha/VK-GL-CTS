@@ -846,6 +846,7 @@ public:
         bool intraOnlyDecodingNoSetupRef{};
         size_t pictureParameterUpdateTriggerHack{0};
         bool forceDisableFilmGrain{false};
+        bool useGeneralLayout{false};
         VkSharedBaseObj<VulkanVideoFrameBuffer> framebuffer;
     };
     explicit VideoBaseDecoder(Parameters &&params);
@@ -863,6 +864,10 @@ public:
     {
         return &m_videoCaps;
     }
+    bool usesGeneralLayout() const
+    {
+        return m_useGeneralLayout;
+    }
 
     // VkParserVideoDecodeClient callbacks
     // Returns max number of reference frames (always at least 2 for MPEG-2)
@@ -879,8 +884,8 @@ public:
     // Called for custom NAL parsing (not required)
     void UnhandledNALU(const uint8_t *pbData, size_t cbData) override;
 
-    virtual void StartVideoSequence(const VkParserDetectedVideoFormat *pVideoFormat);
-    virtual int32_t DecodePictureWithParameters(de::MovePtr<CachedDecodeParameters> &params);
+    void StartVideoSequence(const VkParserDetectedVideoFormat *pVideoFormat);
+    int32_t DecodePictureWithParameters(de::MovePtr<CachedDecodeParameters> &params);
     VkDeviceSize GetBitstreamBuffer(VkDeviceSize size, VkDeviceSize minBitstreamBufferOffsetAlignment,
                                     VkDeviceSize minBitstreamBufferSizeAlignment,
                                     const uint8_t *pInitializeBufferMemory, VkDeviceSize initializeBufferMemorySize,
@@ -998,6 +1003,7 @@ public:
     bool m_outOfOrderDecoding{false};
     bool m_alwaysRecreateDPB{false};
     bool m_intraOnlyDecodingNoSetupRef{false};
+    bool m_useGeneralLayout{false};
     vector<VkParserPerFrameDecodeParameters *> m_pPerFrameDecodeParameters;
     vector<VkParserDecodePictureInfo *> m_pVulkanParserDecodePictureInfo;
     vector<NvVkDecodeFrameData *> m_pFrameDatas;
@@ -1052,6 +1058,11 @@ public:
         bufferFrames(framesToCheck);
         m_decoder->decodeFramesOutOfOrder();
     }
+    void releaseFrame(DecodedFrame *pFrame)
+    {
+        m_decoder->ReleaseDisplayedFrame(pFrame);
+    }
+
     std::shared_ptr<VideoBaseDecoder> m_decoder{};
     VkVideoParser m_parser{};
     std::shared_ptr<Demuxer> m_demuxer{};

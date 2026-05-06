@@ -49,6 +49,24 @@ def onReadonlyRemoveError (func, path, exc_info):
     os.chmod(path, stat.S_IWRITE)
     os.unlink(path)
 
+def forceRemoveTree (path):
+    # Robust shutil.rmtree: tolerates missing paths, read-only files, and
+    # directories lacking read/execute bits (sometimes produced by CMake
+    # builds inside postCheckout trees). Chmod each subdir during its
+    # parent's visit so os.walk can descend into it on the next iteration.
+    if not os.path.exists(path):
+        return
+    def _chmod(p):
+        try:
+            os.chmod(p, stat.S_IRWXU)
+        except OSError:
+            pass
+    _chmod(path)
+    for root, dirs, files in os.walk(path):
+        for name in dirs + files:
+            _chmod(os.path.join(root, name))
+    shutil.rmtree(path, onerror=onReadonlyRemoveError)
+
 class Source:
     def __init__(self, baseDir, extractDir):
         self.baseDir = baseDir
@@ -292,10 +310,16 @@ class GitRepo (Source):
 
         if not os.path.exists(os.path.join(fullDstPath, '.git')):
             logging.debug("git repository does not exist; performing full clone")
+            # A non-empty destination without .git (e.g. postCheckout build
+            # artifacts or a previous partial clone) makes git clone fail.
+            # Wipe it before cloning. CMake builds sometimes leave
+            # unreadable/unsearchable directories, so restore permissions first.
+            forceRemoveTree(fullDstPath)
             try:
                 run(["git", "clone", "--no-checkout", url, fullDstPath])
             except:
                 if backupUrl != None:
+                    forceRemoveTree(fullDstPath)
                     execute(["git", "clone", "--no-checkout", backupUrl, fullDstPath])
 
         pushWorkingDir(fullDstPath)
@@ -336,34 +360,34 @@ PACKAGES = [
     GitRepo(
         "https://github.com/KhronosGroup/SPIRV-Tools.git",
         "git@github.com:KhronosGroup/SPIRV-Tools.git",
-        "2c1fd8974f5d9c04629fd51bd4468fce5fed104d",
+        "c8bda961df8dcdc07cdd6fc59dac3b35a4b73739",
         "spirv-tools"),
     GitRepo(
         "https://github.com/KhronosGroup/glslang.git",
         "git@github.com:KhronosGroup/glslang.git",
-        "7099c123729e02f81d70559e79ee4360096fdfe5",
+        "716f9503264d539cc05503cae562e6949eada8f5",
         "glslang",
         removeTags = ["main-tot", "master-tot"]),
     GitRepo(
         "https://github.com/KhronosGroup/SPIRV-Headers.git",
         "git@github.com:KhronosGroup/SPIRV-Headers.git",
-        "b824a462d4256d720bebb40e78b9eb8f78bbb305",
+        "126038020c2bd47efaa942ccc364ca5353ffccde",
         "spirv-headers"),
     GitRepo(
         "https://github.com/KhronosGroup/Vulkan-Docs.git",
         "git@github.com:KhronosGroup/Vulkan-Docs.git",
-        "20522cd15cca9e42cebfab747491349144bdd61c",
+        "81b1d516cbf42f04a3c7f781977c499945b5e5dc",
         "vulkan-docs"),
     GitRepo(
         "https://github.com/KhronosGroup/Vulkan-ValidationLayers.git",
         "git@github.com:KhronosGroup/Vulkan-ValidationLayers.git",
-        "0a11cf1257471c22b9e7d620ab48057fb2f53cf9",
+        "3d79815f35c2c54d5eaa261204e2e3fc2e90bebb",
         "vulkan-validationlayers",
         postCheckout="python3 scripts/update_deps.py --dir external  --optional tests  --api vulkan"),
     GitRepo(
         "https://github.com/google/amber.git",
         "git@github.com:google/amber.git",
-        "9482448393f3f1f75067cc6ba8ad77fda48691c6",
+        "fc02f9bad7ddaf5ca685ad01c3a0668d19910fbf",
         "amber"),
     GitRepo(
         "https://github.com/open-source-parsers/jsoncpp.git",
@@ -373,7 +397,7 @@ PACKAGES = [
     GitRepo(
         "https://github.com/KhronosGroup/Vulkan-Video-Samples.git",
         "git@github.com:KhronosGroup/Vulkan-Video-Samples.git",
-        "v0.3.5",
+        "v0.3.9",
         "vulkan-video-samples"),
     # NOTE: Temporary video generator repo .
     GitRepo(

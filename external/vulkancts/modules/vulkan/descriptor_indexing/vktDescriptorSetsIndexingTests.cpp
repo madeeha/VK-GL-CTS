@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "vktDescriptorSetsIndexingTests.hpp"
+#include "vktDescriptorIndexingMiscTests.hpp"
 #include "vktTestCaseUtil.hpp"
 
 #include "vkBuilderUtil.hpp"
@@ -409,6 +410,7 @@ void DescriptorEnumerator::init(const vkt::Context &context, uint32_t vertexCoun
 
     bufferSize = ut::createBufferAndBind(buffer, context, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, dataSize);
     deMemcpy(buffer->alloc->getHostPtr(), data.data(), static_cast<size_t>(dataSize));
+    vk::flushAlloc(context.getDeviceInterface(), context.getDevice(), *buffer->alloc);
 
     const VkBufferViewCreateInfo bufferViewCreateInfo = {
         VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, // sType
@@ -4909,6 +4911,8 @@ void descriptorIndexingDescriptorSetsCreateTests(tcu::TestCaseGroup *group)
 
     addFunctionCaseWithPrograms(group, "non_uniform_atomics", nonUniformAtomicsCheckSupport, nonUniformAtomicsPrograms,
                                 nonUniformAtomicsRun);
+
+    createDescriptorIndexingMiscTests(group);
 }
 
 } // namespace DescriptorIndexing

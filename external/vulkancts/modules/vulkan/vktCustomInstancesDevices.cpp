@@ -615,6 +615,15 @@ CustomInstanceWrapper::CustomInstanceWrapper(Context &context, const std::vector
 void VideoDevice::checkSupport(Context &context, const VideoCodecOperationFlags videoCodecOperation)
 {
 #ifndef CTS_USES_VULKANSC
+
+#ifndef DE_BUILD_VIDEO
+    DE_UNREF(context);
+    DE_UNREF(videoCodecOperation);
+    TCU_THROW(NotSupportedError, "Video tests are disabled via DEQP_DISABLE_VK_VIDEO_TESTS");
+#else
+    if (context.getTestContext().getCommandLine().isComputeOnly())
+        TCU_THROW(NotSupportedError, "Video tests are not supported in compute-only mode");
+
     DE_ASSERT(videoCodecOperation != 0 && isVideoOperation(videoCodecOperation));
 
     if (isVideoOperation(videoCodecOperation))
@@ -646,6 +655,7 @@ void VideoDevice::checkSupport(Context &context, const VideoCodecOperationFlags 
 
     if ((videoCodecOperation & vk::VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR) != 0)
         context.requireDeviceFunctionality("VK_KHR_video_decode_vp9");
+#endif
 #else
     DE_UNREF(context);
     DE_UNREF(videoCodecOperation);
@@ -842,6 +852,7 @@ bool VideoDevice::createDeviceSupportingQueue(const vk::VkQueueFlags queueFlagsR
     const bool requireVP9Decode    = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_DECODE_VP9) != 0; // requireVP9Decode
     const bool requireQuantizationMap     = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_QUANTIZATION_MAP) != 0;
     const bool requireIntraRefresh        = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_INTRA_REFRESH) != 0;
+    const bool requireUnifiedImageLayouts = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_UNIFIED_IMAGE_LAYOUTS) != 0;
     const bool requireYCBCRorNotSupported = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_YCBCR_OR_NOT_SUPPORTED) != 0;
     const bool requireSync2orNotSupported = (videoDeviceFlags & VIDEO_DEVICE_FLAG_REQUIRE_SYNC2_OR_NOT_SUPPORTED) != 0;
     const bool requireTimelineSemOrNotSupported =
@@ -989,6 +1000,10 @@ bool VideoDevice::createDeviceSupportingQueue(const vk::VkQueueFlags queueFlagsR
         if (!vk::isCoreDeviceExtension(apiVersion, "VK_KHR_video_encode_intra_refresh"))
             deviceExtensions.push_back("VK_KHR_video_encode_intra_refresh");
 
+    if (requireUnifiedImageLayouts)
+        if (!vk::isCoreDeviceExtension(apiVersion, "VK_KHR_unified_image_layouts"))
+            deviceExtensions.push_back("VK_KHR_unified_image_layouts");
+
     if (requireTimelineSemOrNotSupported)
         if (m_context.isDeviceFunctionalitySupported("VK_KHR_timeline_semaphore"))
             deviceExtensions.push_back("VK_KHR_timeline_semaphore");
@@ -1034,6 +1049,13 @@ bool VideoDevice::createDeviceSupportingQueue(const vk::VkQueueFlags queueFlagsR
         false, //  VkBool32 videoEncodeIntraRefresh;
     };
 
+    vk::VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedImageLayoutsFeatures = {
+        vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR, //  VkStructureType sType;
+        nullptr,                                                                  //  void* pNext;
+        false,                                                                    //  VkBool32 unifiedImageLayouts;
+        false,                                                                    //  VkBool32 unifiedImageLayoutsVideo;
+    };
+
     vk::VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures = {
         vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES, // VkStructureType sType;
         nullptr,                                                           // void* pNext;
@@ -1067,6 +1089,9 @@ bool VideoDevice::createDeviceSupportingQueue(const vk::VkQueueFlags queueFlagsR
     if (requireIntraRefresh)
         appendStructurePtrToVulkanChain((const void **)&features2.pNext, &intraRefreshFeatures);
 
+    if (requireUnifiedImageLayouts)
+        appendStructurePtrToVulkanChain((const void **)&features2.pNext, &unifiedImageLayoutsFeatures);
+
     if (requireTimelineSemOrNotSupported)
         if (m_context.isDeviceFunctionalitySupported("VK_KHR_timeline_semaphore"))
             appendStructurePtrToVulkanChain((const void **)&features2.pNext, &timelineSemaphoreFeatures);
@@ -1093,6 +1118,12 @@ bool VideoDevice::createDeviceSupportingQueue(const vk::VkQueueFlags queueFlagsR
 
     if (requireIntraRefresh && intraRefreshFeatures.videoEncodeIntraRefresh == false)
         TCU_THROW(NotSupportedError, "videoEncodeIntraRefresh feature is required");
+
+    if (requireUnifiedImageLayouts && unifiedImageLayoutsFeatures.unifiedImageLayoutsVideo == false)
+        TCU_THROW(NotSupportedError, "unifiedImageLayoutsVideo feature is required");
+
+    if (requireUnifiedImageLayouts && unifiedImageLayoutsFeatures.unifiedImageLayouts == false)
+        TCU_THROW(NotSupportedError, "unifiedImageLayouts feature is required");
 
     features2.features.robustBufferAccess = false;
 

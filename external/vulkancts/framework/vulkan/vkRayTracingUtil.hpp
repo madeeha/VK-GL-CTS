@@ -213,6 +213,20 @@ public:
         m_hasOpacityMicromap      = true;
         m_opacityGeometryMicromap = *opacityGeometryMicromap;
     }
+    inline bool getHasMotionBlur(void) const
+    {
+        return m_hasMotionBlur;
+    }
+    inline VkAccelerationStructureGeometryMotionTrianglesDataNV &getMotionBlurData(void)
+    {
+        return m_motionData;
+    }
+    inline void setMotionBlur(const VkAccelerationStructureGeometryMotionTrianglesDataNV *motionBlurData)
+    {
+        DE_ASSERT(motionBlurData);
+        m_hasMotionBlur = true;
+        m_motionData    = *motionBlurData;
+    }
     virtual uint32_t getVertexCount(void) const                           = 0;
     virtual const uint8_t *getVertexPointer(void) const                   = 0;
     virtual VkDeviceSize getVertexStride(void) const                      = 0;
@@ -245,7 +259,9 @@ private:
     VkIndexType m_indexType;
     VkGeometryFlagsKHR m_geometryFlags;
     bool m_hasOpacityMicromap;
+    bool m_hasMotionBlur;
     VkAccelerationStructureTrianglesOpacityMicromapEXT m_opacityGeometryMicromap;
+    VkAccelerationStructureGeometryMotionTrianglesDataNV m_motionData;
     VkRayTracingLssIndexingModeNV m_indexingMode;
     bool m_useEndcaps;
     bool m_doBLASCopy;
@@ -589,6 +605,10 @@ private:
     // The size of each pseudo-structure above is saved to one of the correspoding union members below.
     union BlockSize
     {
+        BlockSize()
+        {
+            memset(this, 0, sizeof(*this));
+        }
         size_t trianglesBlockSize;
         size_t aabbsBlockSize;
         size_t spheresBlockSize;
@@ -618,6 +638,7 @@ RaytracedGeometry<V, I>::RaytracedGeometry(VkGeometryTypeKHR geometryType, uint3
     , m_paddingBlocks(paddingBlocks)
     , m_vertexCount(0)
     , m_minAlign(minAlign)
+    , kRadiusSize(0)
 {
     init();
 }
@@ -631,6 +652,7 @@ RaytracedGeometry<V, I>::RaytracedGeometry(VkGeometryTypeKHR geometryType, const
     , m_minAlign(minAlign)
     , m_vertices()
     , m_indices(indices)
+    , kRadiusSize(0)
 {
     init();
     for (const auto &vertex : vertices)
@@ -750,8 +772,6 @@ template <typename V, typename I>
 size_t RaytracedGeometry<V, I>::getRadiusByteSize(void) const
 {
     const auto radiusCount = getRadiusCount();
-    DE_ASSERT(radiusCount > 0u);
-
     return (radiusCount * kRadiusSize);
 }
 
@@ -1033,7 +1053,8 @@ public:
     virtual void addGeometry(de::SharedPtr<RaytracedGeometryBase> &raytracedGeometry);
     virtual void addGeometry(
         const std::vector<tcu::Vec3> &geometryData, const bool triangles, const VkGeometryFlagsKHR geometryFlags = 0u,
-        const VkAccelerationStructureTrianglesOpacityMicromapEXT *opacityGeometryMicromap = nullptr);
+        const VkAccelerationStructureTrianglesOpacityMicromapEXT *opacityGeometryMicromap = nullptr,
+        const VkAccelerationStructureGeometryMotionTrianglesDataNV *motionData            = nullptr);
     virtual void addSphereGeometry(const std::vector<tcu::Vec3> &geometryData, const std::vector<float> &radiusData,
                                    const std::vector<uint32_t> &indexData, const bool linear,
                                    const VkIndexType indexType, const VkRayTracingLssIndexingModeNV indexingMode,
@@ -1051,6 +1072,7 @@ public:
     virtual void setDeferredOperation(const bool deferredOperation, const uint32_t workerThreadCount = 0u) = 0;
     virtual void setUseArrayOfPointers(const bool useArrayOfPointers)                                      = 0;
     virtual void setUseMaintenance5(const bool useMaintenance5)                                            = 0;
+    virtual void setUseDeviceAddressCommands(const bool useDeviceAddressCommands)                          = 0;
     virtual void setIndirectBuildParameters(const VkBuffer indirectBuffer, const VkDeviceSize indirectBufferOffset,
                                             const uint32_t indirectBufferStride)                           = 0;
     virtual VkBuildAccelerationStructureFlagsKHR getBuildFlags() const                                     = 0;
@@ -1259,6 +1281,8 @@ public:
                                             const uint32_t indirectBufferStride)                           = 0;
     virtual void setUsePPGeometries(const bool usePPGeometries)                                            = 0;
     virtual void setTryCachedMemory(const bool tryCachedMemory)                                            = 0;
+    virtual void setUseDeviceAddressCommands(const bool useDeviceAddressCommands)                          = 0;
+    virtual void setMaxMotionInstances(const uint32_t maxMotionInstances)                                  = 0;
     virtual VkBuildAccelerationStructureFlagsKHR getBuildFlags() const                                     = 0;
     VkAccelerationStructureBuildSizesInfoKHR getStructureBuildSizes() const;
 
@@ -1456,19 +1480,23 @@ public:
     {
     }
 
-    virtual uint32_t getShaderGroupHandleSize(void)                  = 0;
-    virtual uint32_t getShaderGroupHandleAlignment(void)             = 0;
-    virtual uint32_t getShaderGroupHandleCaptureReplaySize(void)     = 0;
-    virtual uint32_t getMaxRecursionDepth(void)                      = 0;
-    virtual uint32_t getMaxShaderGroupStride(void)                   = 0;
-    virtual uint32_t getShaderGroupBaseAlignment(void)               = 0;
-    virtual uint64_t getMaxGeometryCount(void)                       = 0;
-    virtual uint64_t getMaxInstanceCount(void)                       = 0;
-    virtual uint64_t getMaxPrimitiveCount(void)                      = 0;
-    virtual uint32_t getMaxDescriptorSetAccelerationStructures(void) = 0;
-    virtual uint32_t getMaxRayDispatchInvocationCount(void)          = 0;
-    virtual uint32_t getMaxRayHitAttributeSize(void)                 = 0;
-    virtual uint32_t getMaxMemoryAllocationCount(void)               = 0;
+    virtual uint32_t getShaderGroupHandleSize(void)                                      = 0;
+    virtual uint32_t getShaderGroupHandleAlignment(void)                                 = 0;
+    virtual uint32_t getShaderGroupHandleCaptureReplaySize(void)                         = 0;
+    virtual uint32_t getMaxRecursionDepth(void)                                          = 0;
+    virtual uint32_t getMaxShaderGroupStride(void)                                       = 0;
+    virtual uint32_t getShaderGroupBaseAlignment(void)                                   = 0;
+    virtual uint64_t getMaxGeometryCount(void)                                           = 0;
+    virtual uint64_t getMaxInstanceCount(void)                                           = 0;
+    virtual uint64_t getMaxPrimitiveCount(void)                                          = 0;
+    virtual uint32_t getMaxDescriptorSetAccelerationStructures(void)                     = 0;
+    virtual uint32_t getMaxRayDispatchInvocationCount(void)                              = 0;
+    virtual uint32_t getMaxRayHitAttributeSize(void)                                     = 0;
+    virtual uint32_t getMaxMemoryAllocationCount(void)                                   = 0;
+    virtual uint32_t getMaxPerStageDescriptorAccelerationStructures(void)                = 0;
+    virtual uint32_t getMaxPerStageDescriptorUpdateAfterBindAccelerationStructures(void) = 0;
+    virtual uint32_t getMaxDescriptorSetUpdateAfterBindAccelerationStructures(void)      = 0;
+    virtual uint32_t getMinAccelerationStructureScratchOffsetAlignment(void)             = 0;
 };
 
 de::MovePtr<RayTracingProperties> makeRayTracingProperties(const InstanceInterface &vki,

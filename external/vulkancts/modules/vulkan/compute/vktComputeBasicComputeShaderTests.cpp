@@ -1122,9 +1122,10 @@ tcu::TestStatus CopySSBOToImageTestInstance::iterate(void)
     return tcu::TestStatus::pass("Compute succeeded");
 }
 
-Move<VkDevice> getRobustDevice(Context &context, bool enable64BitIndexing)
+Move<VkDevice> getRobustDevice(Context &context, bool enable64BitIndexing, bool enableShaderObject)
 {
     DE_UNREF(enable64BitIndexing);
+    DE_UNREF(enableShaderObject);
     const auto &vki           = context.getInstanceInterface();
     const float queuePriority = 1.0f;
     // Create a universal queue that supports graphics and compute
@@ -1151,6 +1152,14 @@ Move<VkDevice> getRobustDevice(Context &context, bool enable64BitIndexing)
         indexingFeatures.shader64BitIndexing = true;
         indexingFeatures.pNext               = pNext;
         pNext                                = &indexingFeatures;
+    }
+
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = initVulkanStructure();
+    if (enableShaderObject)
+    {
+        shaderObjectFeatures.shaderObject = true;
+        shaderObjectFeatures.pNext        = pNext;
+        pNext                             = &shaderObjectFeatures;
     }
 #endif
 
@@ -1406,191 +1415,227 @@ BufferToBufferInvertTestInstance::BufferToBufferInvertTestInstance(
 tcu::TestStatus BufferToBufferInvertTestInstance::iterate(void)
 {
     const VkDeviceSize bufferSizeBytes = sizeof(tcu::UVec4) * m_numValues;
-    Move<VkDevice> robustDevice;
-    if (m_doBoundsCheck)
+    try
     {
-        robustDevice = getRobustDevice(m_context, bufferSizeBytes >= (1ULL << 32));
-    }
+        Move<VkDevice> robustDevice;
+        if (m_doBoundsCheck)
+        {
+            const bool enableShaderObject =
+                (m_computePipelineConstructionType == COMPUTE_PIPELINE_CONSTRUCTION_TYPE_SHADER_OBJECT_SPIRV) ||
+                (m_computePipelineConstructionType == COMPUTE_PIPELINE_CONSTRUCTION_TYPE_SHADER_OBJECT_BINARY);
 
-    const auto &vki     = m_context.getInstanceInterface();
-    const auto &vkp     = m_context.getPlatformInterface();
-    const auto device   = m_doBoundsCheck ? *robustDevice : m_context.getDevice();
-    const auto instance = m_context.getInstance();
+            robustDevice = getRobustDevice(m_context, bufferSizeBytes >= (1ULL << 32), enableShaderObject);
+        }
 
-    const uint32_t queueFamilyIndex = m_context.getUniversalQueueFamilyIndex();
-    auto driver = de::MovePtr<DeviceDriver>(new DeviceDriver(vkp, instance, device, m_context.getUsedApiVersion(),
-                                                             m_context.getTestContext().getCommandLine()));
-    const DeviceInterface &vk = *driver;
+        const auto &vki     = m_context.getInstanceInterface();
+        const auto &vkp     = m_context.getPlatformInterface();
+        const auto device   = m_doBoundsCheck ? *robustDevice : m_context.getDevice();
+        const auto instance = m_context.getInstance();
 
-    auto queue           = getDeviceQueue(*driver, device, queueFamilyIndex, 0u);
-    auto customallocator = de::MovePtr<Allocator>(
-        new SimpleAllocator(*driver, device, getPhysicalDeviceMemoryProperties(vki, m_context.getPhysicalDevice())));
-    auto &allocator = *customallocator;
-
-    // Customize the test based on buffer type
-
-    const VkBufferUsageFlags inputBufferUsageFlags =
-        (m_bufferType == BUFFER_TYPE_UNIFORM ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    const VkDescriptorType inputBufferDescriptorType =
-        (m_bufferType == BUFFER_TYPE_UNIFORM ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    const uint32_t randomSeed = (m_bufferType == BUFFER_TYPE_UNIFORM ? 0x111223f : 0x124fef);
-
-    // Create an input buffer
-
-    const BufferWithMemory inputBuffer(vk, device, allocator,
-                                       makeBufferCreateInfo(bufferSizeBytes, inputBufferUsageFlags),
-                                       MemoryRequirement::HostVisible | MemoryRequirement::Cached);
-
-    // Fill the input buffer with data
-    {
-        de::Random rnd(randomSeed);
-        const Allocation &inputBufferAllocation = inputBuffer.getAllocation();
-        tcu::UVec4 *bufferPtr                   = static_cast<tcu::UVec4 *>(inputBufferAllocation.getHostPtr());
-        for (uint32_t i = 0; i < m_numValues; ++i)
-            bufferPtr[i].x() = rnd.getUint32();
-
-        flushAlloc(vk, device, inputBufferAllocation);
-    }
-
-    const Unique<VkCommandPool> cmdPool(makeCommandPool(vk, device, queueFamilyIndex));
-    const Unique<VkCommandBuffer> cmdBuffer(
-        allocateCommandBuffer(vk, device, *cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY));
-
-    // Create an output buffer
-
-    const BufferWithMemory outputBuffer(
-        vk, device, allocator,
-        makeBufferCreateInfo(bufferSizeBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
-                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-        m_deviceLocal ? MemoryRequirement::Local : (MemoryRequirement::HostVisible | MemoryRequirement::Cached));
-    beginCommandBuffer(vk, *cmdBuffer);
-    vk.cmdFillBuffer(*cmdBuffer, *outputBuffer, 0, bufferSizeBytes, 0xBEBEBEBE);
-    endCommandBuffer(vk, *cmdBuffer);
-
-    // Wait for completion
-    submitCommandsAndWait(vk, device, queue, *cmdBuffer);
-
-    const BufferWithMemory readbackBuffer(vk, device, allocator,
-                                          makeBufferCreateInfo(bufferSizeBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-                                          MemoryRequirement::HostVisible | MemoryRequirement::Cached);
-    const Allocation &readbackBufferAllocation = readbackBuffer.getAllocation();
-
-    // Create descriptor set
-
-    const Unique<VkDescriptorSetLayout> descriptorSetLayout(
-        DescriptorSetLayoutBuilder()
-            .addSingleBinding(inputBufferDescriptorType, VK_SHADER_STAGE_COMPUTE_BIT)
-            .addSingleBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
-            .build(vk, device));
-
-    const Unique<VkDescriptorPool> descriptorPool(
-        DescriptorPoolBuilder()
-            .addType(inputBufferDescriptorType)
-            .addType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-            .build(vk, device, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, 1u));
-
-    const Unique<VkDescriptorSet> descriptorSet(makeDescriptorSet(vk, device, *descriptorPool, *descriptorSetLayout));
-
-    VkDeviceSize inputRange  = m_doBoundsCheck ? bufferSizeBytes * 3 / 4 : VK_WHOLE_SIZE;
-    VkDeviceSize outputRange = m_doBoundsCheck ? bufferSizeBytes * 7 / 8 : VK_WHOLE_SIZE;
-
-    const VkDescriptorBufferInfo inputBufferDescriptorInfo = makeDescriptorBufferInfo(*inputBuffer, 0ull, inputRange);
-    const VkDescriptorBufferInfo outputBufferDescriptorInfo =
-        makeDescriptorBufferInfo(*outputBuffer, 0ull, outputRange);
-    DescriptorSetUpdateBuilder()
-        .writeSingle(*descriptorSet, DescriptorSetUpdateBuilder::Location::binding(0u), inputBufferDescriptorType,
-                     &inputBufferDescriptorInfo)
-        .writeSingle(*descriptorSet, DescriptorSetUpdateBuilder::Location::binding(1u),
-                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &outputBufferDescriptorInfo)
-        .update(vk, device);
-
-    // Perform the computation
-
-    ComputePipelineWrapper pipeline(vk, device, m_computePipelineConstructionType,
-                                    m_context.getBinaryCollection().get("comp"));
-    pipeline.setDescriptorSetLayout(descriptorSetLayout.get());
+        const uint32_t queueFamilyIndex = m_context.getUniversalQueueFamilyIndex();
 #ifndef CTS_USES_VULKANSC
-    if (bufferSizeBytes > (uint64_t{1} << 32) && !m_use64bExecutionMode)
-    {
-        pipeline.setPipelineCreateFlags2(VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT);
-    }
-#endif
-    DE_UNREF(m_use64bExecutionMode);
-    pipeline.buildPipeline();
+        auto driver = de::MovePtr<DeviceDriver>(new DeviceDriver(vkp, instance, device, m_context.getUsedApiVersion(),
+                                                                 m_context.getTestContext().getCommandLine()));
+#else
+        auto driver = de::MovePtr<DeviceDriverSC, DeinitDeviceDeleter>(
+            new DeviceDriverSC(vkp, instance, device, m_context.getTestContext().getCommandLine(),
+                               m_context.getResourceInterface(), m_context.getDeviceVulkanSC10Properties(),
+                               m_context.getDeviceProperties(), m_context.getUsedApiVersion()),
+            vk::DeinitDeviceDeleter(m_context.getResourceInterface().get(), device));
+#endif // CTS_USES_VULKANSC
+        const DeviceInterface &vk = *driver;
 
-    const VkBufferMemoryBarrier hostWriteBarrier = makeBufferMemoryBarrier(
-        VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, *inputBuffer, 0ull, bufferSizeBytes);
+        auto queue           = getDeviceQueue(*driver, device, queueFamilyIndex, 0u);
+        auto customallocator = de::MovePtr<Allocator>(new SimpleAllocator(
+            *driver, device, getPhysicalDeviceMemoryProperties(vki, m_context.getPhysicalDevice())));
+        auto &allocator      = *customallocator;
 
-    const VkBufferMemoryBarrier shaderWriteBarrier = makeBufferMemoryBarrier(
-        VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, *outputBuffer, 0ull, bufferSizeBytes);
+        // Customize the test based on buffer type
 
-    const VkBufferMemoryBarrier transferWriteBarrier = makeBufferMemoryBarrier(
-        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, *readbackBuffer, 0ull, bufferSizeBytes);
+        const VkBufferUsageFlags inputBufferUsageFlags =
+            (m_bufferType == BUFFER_TYPE_UNIFORM ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT :
+                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        const VkDescriptorType inputBufferDescriptorType =
+            (m_bufferType == BUFFER_TYPE_UNIFORM ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER :
+                                                   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        const uint32_t randomSeed = (m_bufferType == BUFFER_TYPE_UNIFORM ? 0x111223f : 0x124fef);
 
-    // Start recording commands
+        // Create an input buffer
 
-    beginCommandBuffer(vk, *cmdBuffer);
+        const BufferWithMemory inputBuffer(vk, device, allocator,
+                                           makeBufferCreateInfo(bufferSizeBytes, inputBufferUsageFlags), HostIntent::W);
 
-    pipeline.bind(*cmdBuffer);
-    vk.cmdBindDescriptorSets(*cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.getPipelineLayout(), 0u, 1u,
-                             &descriptorSet.get(), 0u, nullptr);
+        // Fill the input buffer with data
+        std::vector<tcu::UVec4> inputValues;
+        {
+            inputValues.reserve(m_numValues);
+            de::Random rnd(randomSeed);
+            for (uint32_t i = 0u; i < m_numValues; ++i)
+                inputValues.emplace_back(rnd.getUint32(), 0u, 0u, 0u);
 
-    vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                          (VkDependencyFlags)0, 0, nullptr, 1, &hostWriteBarrier, 0, nullptr);
-    vk.cmdDispatch(*cmdBuffer, m_workSize.x(), m_workSize.y(), m_workSize.z());
-    vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
-                          (VkDependencyFlags)0, 0, nullptr, 1, &shaderWriteBarrier, 0, nullptr);
+            const Allocation &inputBufferAllocation = inputBuffer.getAllocation();
+            memcpy(inputBufferAllocation.getHostPtr(), de::dataOrNull(inputValues), de::dataSize(inputValues));
+            flushAlloc(vk, device, inputBufferAllocation);
+        }
 
-    endCommandBuffer(vk, *cmdBuffer);
+        const Unique<VkCommandPool> cmdPool(makeCommandPool(vk, device, queueFamilyIndex));
+        const Unique<VkCommandBuffer> cmdBuffer(
+            allocateCommandBuffer(vk, device, *cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY));
 
-    // Wait for completion
+        // Create an output buffer
 
-    submitCommandsAndWait(vk, device, queue, *cmdBuffer);
+        std::unique_ptr<BufferWithMemory> outputBuffer;
+        const auto outputBufferUsage = static_cast<VkBufferUsageFlags>(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        const auto outputBufferInfo = makeBufferCreateInfo(bufferSizeBytes, outputBufferUsage);
+        if (m_deviceLocal)
+        {
+            outputBuffer.reset(new BufferWithMemory(vk, device, allocator, outputBufferInfo, MemoryRequirement::Local));
+        }
+        else
+        {
+            outputBuffer.reset(new BufferWithMemory(vk, device, allocator, outputBufferInfo, HostIntent::R));
+        }
 
-    // Validate the results
-    const Allocation &outputBufferAllocation = outputBuffer.getAllocation();
-
-    if (m_deviceLocal)
-    {
-        VkBufferCopy copy{0, 0, bufferSizeBytes};
         beginCommandBuffer(vk, *cmdBuffer);
-
-        vk.cmdCopyBuffer(*cmdBuffer, *outputBuffer, *readbackBuffer, 1, &copy);
-
-        vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
-                              (VkDependencyFlags)0, 0, nullptr, 1, &transferWriteBarrier, 0, nullptr);
-
+        vk.cmdFillBuffer(*cmdBuffer, outputBuffer->get(), 0, bufferSizeBytes, 0xBEBEBEBE);
         endCommandBuffer(vk, *cmdBuffer);
 
         // Wait for completion
         submitCommandsAndWait(vk, device, queue, *cmdBuffer);
 
-        invalidateAlloc(vk, device, readbackBufferAllocation);
-    }
-    else
-    {
-        invalidateAlloc(vk, device, outputBufferAllocation);
-    }
+        const BufferWithMemory readbackBuffer(vk, device, allocator,
+                                              makeBufferCreateInfo(bufferSizeBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+                                              HostIntent::R);
+        const Allocation &readbackBufferAllocation = readbackBuffer.getAllocation();
 
-    const tcu::UVec4 *bufferPtr    = static_cast<tcu::UVec4 *>(m_deviceLocal ? readbackBufferAllocation.getHostPtr() :
-                                                                               outputBufferAllocation.getHostPtr());
-    const tcu::UVec4 *refBufferPtr = static_cast<tcu::UVec4 *>(inputBuffer.getAllocation().getHostPtr());
+        // Create descriptor set
 
-    for (uint32_t ndx = 0; ndx < m_numValues; ++ndx)
-    {
-        bool inputInRange  = ndx * sizeof(tcu::UVec4) < inputRange;
-        bool outputInRange = ndx * sizeof(tcu::UVec4) < outputRange;
-        const uint32_t res = bufferPtr[ndx].x();
-        const uint32_t ref = outputInRange ? ~(inputInRange ? refBufferPtr[ndx].x() : 0) : 0xBEBEBEBE;
+        const Unique<VkDescriptorSetLayout> descriptorSetLayout(
+            DescriptorSetLayoutBuilder()
+                .addSingleBinding(inputBufferDescriptorType, VK_SHADER_STAGE_COMPUTE_BIT)
+                .addSingleBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                .build(vk, device));
 
-        if (res != ref)
+        const Unique<VkDescriptorPool> descriptorPool(
+            DescriptorPoolBuilder()
+                .addType(inputBufferDescriptorType)
+                .addType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+                .build(vk, device, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, 1u));
+
+        const Unique<VkDescriptorSet> descriptorSet(
+            makeDescriptorSet(vk, device, *descriptorPool, *descriptorSetLayout));
+
+        VkDeviceSize inputRange  = m_doBoundsCheck ? bufferSizeBytes * 3 / 4 : VK_WHOLE_SIZE;
+        VkDeviceSize outputRange = m_doBoundsCheck ? bufferSizeBytes * 7 / 8 : VK_WHOLE_SIZE;
+
+        const VkDescriptorBufferInfo inputBufferDescriptorInfo =
+            makeDescriptorBufferInfo(*inputBuffer, 0ull, inputRange);
+        const VkDescriptorBufferInfo outputBufferDescriptorInfo =
+            makeDescriptorBufferInfo(outputBuffer->get(), 0ull, outputRange);
+        DescriptorSetUpdateBuilder()
+            .writeSingle(*descriptorSet, DescriptorSetUpdateBuilder::Location::binding(0u), inputBufferDescriptorType,
+                         &inputBufferDescriptorInfo)
+            .writeSingle(*descriptorSet, DescriptorSetUpdateBuilder::Location::binding(1u),
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &outputBufferDescriptorInfo)
+            .update(vk, device);
+
+        // Perform the computation
+
+        ComputePipelineWrapper pipeline(vk, device, m_computePipelineConstructionType,
+                                        m_context.getBinaryCollection().get("comp"));
+        pipeline.setDescriptorSetLayout(descriptorSetLayout.get());
+#ifndef CTS_USES_VULKANSC
+        if (bufferSizeBytes > (uint64_t{1} << 32) && !m_use64bExecutionMode)
         {
-            std::ostringstream msg;
-            msg << "Comparison failed for Output.values[" << ndx << "]";
-            return tcu::TestStatus::fail(msg.str());
+            pipeline.setPipelineCreateFlags2(VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT);
         }
+#endif
+        DE_UNREF(m_use64bExecutionMode);
+        pipeline.buildPipeline();
+
+        const VkBufferMemoryBarrier hostWriteBarrier = makeBufferMemoryBarrier(
+            VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, *inputBuffer, 0ull, bufferSizeBytes);
+
+        const VkBufferMemoryBarrier shaderWriteBarrier = makeBufferMemoryBarrier(
+            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, outputBuffer->get(), 0ull, bufferSizeBytes);
+
+        const VkBufferMemoryBarrier transferWriteBarrier = makeBufferMemoryBarrier(
+            VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, *readbackBuffer, 0ull, bufferSizeBytes);
+
+        // Start recording commands
+
+        beginCommandBuffer(vk, *cmdBuffer);
+
+        pipeline.bind(*cmdBuffer);
+        vk.cmdBindDescriptorSets(*cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.getPipelineLayout(), 0u, 1u,
+                                 &descriptorSet.get(), 0u, nullptr);
+
+        vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                              (VkDependencyFlags)0, 0, nullptr, 1, &hostWriteBarrier, 0, nullptr);
+        vk.cmdDispatch(*cmdBuffer, m_workSize.x(), m_workSize.y(), m_workSize.z());
+        vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
+                              (VkDependencyFlags)0, 0, nullptr, 1, &shaderWriteBarrier, 0, nullptr);
+
+        endCommandBuffer(vk, *cmdBuffer);
+
+        // Wait for completion
+
+        submitCommandsAndWait(vk, device, queue, *cmdBuffer);
+
+        // Validate the results
+        const Allocation &outputBufferAllocation = outputBuffer->getAllocation();
+
+        if (m_deviceLocal)
+        {
+            VkBufferCopy copy{0, 0, bufferSizeBytes};
+            beginCommandBuffer(vk, *cmdBuffer);
+
+            vk.cmdCopyBuffer(*cmdBuffer, outputBuffer->get(), *readbackBuffer, 1, &copy);
+
+            vk.cmdPipelineBarrier(*cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
+                                  (VkDependencyFlags)0, 0, nullptr, 1, &transferWriteBarrier, 0, nullptr);
+
+            endCommandBuffer(vk, *cmdBuffer);
+
+            // Wait for completion
+            submitCommandsAndWait(vk, device, queue, *cmdBuffer);
+
+            invalidateAlloc(vk, device, readbackBufferAllocation);
+        }
+        else
+        {
+            invalidateAlloc(vk, device, outputBufferAllocation);
+        }
+
+        const tcu::UVec4 *bufferPtr = static_cast<tcu::UVec4 *>(m_deviceLocal ? readbackBufferAllocation.getHostPtr() :
+                                                                                outputBufferAllocation.getHostPtr());
+        const tcu::UVec4 *refBufferPtr = &inputValues[0];
+
+        for (uint32_t ndx = 0; ndx < m_numValues; ++ndx)
+        {
+            bool inputInRange  = ndx * sizeof(tcu::UVec4) < inputRange;
+            bool outputInRange = ndx * sizeof(tcu::UVec4) < outputRange;
+            const uint32_t res = bufferPtr[ndx].x();
+            const uint32_t ref = outputInRange ? ~(inputInRange ? refBufferPtr[ndx].x() : 0) : 0xBEBEBEBE;
+
+            if (res != ref)
+            {
+                std::ostringstream msg;
+                msg << "Comparison failed for Output.values[" << ndx << "]";
+                return tcu::TestStatus::fail(msg.str());
+            }
+        }
+        return tcu::TestStatus::pass("Compute succeeded");
     }
-    return tcu::TestStatus::pass("Compute succeeded");
+    catch (const vk::OutOfMemoryError &)
+    {
+        if (bufferSizeBytes >= (1ULL << 32))
+        {
+            TCU_THROW(NotSupportedError, "Out of memory");
+        }
+        throw;
+    }
 }
 
 class InvertSSBOInPlaceTest : public vkt::TestCase
@@ -1791,6 +1836,112 @@ tcu::TestStatus InvertSSBOInPlaceTestInstance::iterate(void)
         }
     }
     return tcu::TestStatus::pass("Compute succeeded");
+}
+
+class UntypedPointerTest : public vkt::TestCase
+{
+public:
+    UntypedPointerTest(tcu::TestContext &testCtx, const std::string &name,
+                       const vk::ComputePipelineConstructionType computePipelineConstructionType)
+        : TestCase(testCtx, name)
+        , m_computePipelineConstructionType(computePipelineConstructionType)
+    {
+    }
+    virtual void checkSupport(Context &context) const;
+    void initPrograms(SourceCollections &sourceCollections) const;
+    TestInstance *createInstance(Context &context) const;
+
+private:
+    const vk::ComputePipelineConstructionType m_computePipelineConstructionType;
+};
+
+void UntypedPointerTest::checkSupport(Context &context) const
+{
+    context.requireDeviceFunctionality("VK_KHR_shader_untyped_pointers");
+    context.requireDeviceFunctionality("VK_EXT_shader_64bit_indexing");
+    checkShaderObjectRequirements(context.getInstanceInterface(), context.getPhysicalDevice(),
+                                  m_computePipelineConstructionType);
+}
+
+void UntypedPointerTest::initPrograms(SourceCollections &sourceCollections) const
+{
+    const std::string src = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability Int64
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %b
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %B Block
+               OpMemberDecorate %B 0 NonWritable
+               OpMemberDecorate %B 0 Offset 0
+               OpDecorate %b NonWritable
+               OpDecorate %b Binding 0
+               OpDecorate %b DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_runtimearr_float = OpTypeRuntimeArray %float
+          %B = OpTypeStruct %_runtimearr_float
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+          %b = OpUntypedVariableKHR %ptr StorageBuffer %B
+      %ulong = OpTypeInt 64 0
+       %long = OpTypeInt 64 1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %13 = OpUntypedArrayLengthKHR %ulong %B %b 0
+         %15 = OpBitcast %long %13
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    const SpirVAsmBuildOptions spvOptions(sourceCollections.usedVulkanVersion, SPIRV_VERSION_1_5);
+    sourceCollections.spirvAsmSources.add("comp") << src << spvOptions;
+}
+
+class UntypedPointerTestInstance : public vkt::TestInstance
+{
+public:
+    UntypedPointerTestInstance(Context &context,
+                               const vk::ComputePipelineConstructionType computePipelineConstructionType)
+        : TestInstance(context)
+        , m_computePipelineConstructionType(computePipelineConstructionType)
+    {
+    }
+
+    tcu::TestStatus iterate(void);
+
+private:
+    const vk::ComputePipelineConstructionType m_computePipelineConstructionType;
+};
+
+TestInstance *UntypedPointerTest::createInstance(Context &context) const
+{
+    return new UntypedPointerTestInstance(context, m_computePipelineConstructionType);
+}
+
+tcu::TestStatus UntypedPointerTestInstance::iterate(void)
+{
+    const DeviceInterface &vk = m_context.getDeviceInterface();
+    const VkDevice device     = m_context.getDevice();
+
+    const Unique<VkDescriptorSetLayout> descriptorSetLayout(
+        DescriptorSetLayoutBuilder()
+            .addSingleBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, VK_SHADER_STAGE_COMPUTE_BIT)
+            .build(vk, device));
+
+    ComputePipelineWrapper pipeline(vk, device, m_computePipelineConstructionType,
+                                    m_context.getBinaryCollection().get("comp"));
+
+#ifndef CTS_USES_VULKANSC
+    pipeline.setPipelineCreateFlags2(VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT);
+#endif
+    pipeline.setDescriptorSetLayout(descriptorSetLayout.get());
+    pipeline.buildPipeline();
+
+    return tcu::TestStatus::pass("Pass");
 }
 
 class WriteToMultipleSSBOTest : public vkt::TestCase
@@ -3180,6 +3331,7 @@ DispatchBaseTest::DispatchBaseTest(tcu::TestContext &testCtx, const std::string 
 
 void DispatchBaseTest::checkSupport(Context &context) const
 {
+    context.requireDeviceFunctionality("VK_KHR_device_group");
     checkShaderObjectRequirements(context.getInstanceInterface(), context.getPhysicalDevice(),
                                   m_computePipelineConstructionType);
     if (m_useMaintenance5)
@@ -3471,6 +3623,7 @@ SequentialDispatchTest::~SequentialDispatchTest(void)
 
 void SequentialDispatchTest::checkSupport(Context &context) const
 {
+    context.requireDeviceFunctionality("VK_KHR_device_group");
     checkShaderObjectRequirements(context.getInstanceInterface(), context.getPhysicalDevice(),
                                   m_computePipelineConstructionType);
 }
@@ -5291,7 +5444,7 @@ void ReplicatedCompositesTest::initPrograms(SourceCollections &sourceCollections
         << "#extension GL_KHR_memory_scope_semantics : enable\n"
         << "#extension GL_EXT_spec_constant_composites : enable\n"
         << "#pragma use_replicated_composites\n"
-        << "layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n"
+        << "layout (local_size_x = " << ((m_compositeType == COOPMAT) ? "64" : "1") << ") in;\n"
         << "layout(binding = 0, scalar) buffer Output {\n";
 
     switch (m_compositeType)
@@ -5476,8 +5629,10 @@ void ReplicatedCompositesTest::initPrograms(SourceCollections &sourceCollections
             << "    sb_out.str[5] = str2.b.c;\n";
         break;
     case COOPMAT:
-        src << "    sb_out.mat[0] = float(mat[0]);\n"
-            << "    sb_out.mat[1] = (mat.length() > 1) ? float(mat[1]) : float(mat[0]);\n";
+        src << "    if (gl_LocalInvocationIndex == 0) {\n"
+            << "        sb_out.mat[0] = float(mat[0]);\n"
+            << "        sb_out.mat[1] = (mat.length() > 1) ? float(mat[1]) : float(mat[0]);\n"
+            << "    }\n";
         break;
     default:
         DE_ASSERT(0);
@@ -6039,6 +6194,11 @@ tcu::TestCaseGroup *createBasicComputeShaderTests(tcu::TestContext &testCtx,
         basicComputeTests->addChild(
             cts_amber::createAmberTestCase(testCtx, "branch_past_barrier", "", "compute", "branch_past_barrier.amber"));
         basicComputeTests->addChild(cts_amber::createAmberTestCase(
+            testCtx, "float64_isnan_isinf", "", "compute", "float64_isnan_isinf.amber", {"Features.shaderFloat64"}));
+        basicComputeTests->addChild(cts_amber::createAmberTestCase(testCtx, "float16_isnan_isinf", "", "compute",
+                                                                   "float16_isnan_isinf.amber",
+                                                                   {"Float16Int8Features.shaderFloat16"}));
+        basicComputeTests->addChild(cts_amber::createAmberTestCase(
             testCtx, "webgl_spirv_loop",
             "Simple SPIR-V loop from a WebGL example that caused problems in some implementations", "compute",
             "webgl_spirv_loop.amber"));
@@ -6060,6 +6220,8 @@ tcu::TestCaseGroup *createBasicComputeShaderTests(tcu::TestContext &testCtx,
                 "pkadd-immediate.amber");
             testCase->addRequirement("Features.shaderInt16");
             testCase->addRequirement("Storage16BitFeatures.storageBuffer16BitAccess");
+            // UID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-0633
+            testCase->addRequirement("Storage16BitFeatures.uniformAndStorageBuffer16BitAccess");
             basicComputeTests->addChild(testCase);
         }
     }
@@ -6100,6 +6262,8 @@ tcu::TestCaseGroup *create64bIndexingComputeShaderTests(
     indexing64b->addChild(BufferToBufferInvertTest::CopyInvertSSBOCase(
         testCtx, "copy_ssbo_64b_execution_mode", numElems64b, tcu::IVec3(1024, 1, 1), tcu::IVec3(1024, 1, 1),
         computePipelineConstructionType, false, false, true));
+
+    indexing64b->addChild(new UntypedPointerTest(testCtx, "untyped_pointers", computePipelineConstructionType));
 #endif
 
     return indexing64b.release();

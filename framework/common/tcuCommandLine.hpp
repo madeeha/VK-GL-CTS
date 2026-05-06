@@ -45,6 +45,8 @@ enum RunMode
     RUNMODE_DUMP_XML_CASELIST,  //! Test program dumps the list of contained test cases in XML format.
     RUNMODE_DUMP_TEXT_CASELIST, //! Test program dumps the list of contained test cases in plain-text format.
     RUNMODE_DUMP_STDOUT_CASELIST, //! Test program dumps the list of contained test cases in plain-text format into stdout.
+    RUNMODE_DUMP_TEXT_TRIE,       //! Test program dumps the list of contained test cases in trie format to a text file.
+    RUNMODE_DUMP_STDOUT_TRIE,     //! Test program dumps the list of contained test cases in trie format to stdout.
     RUNMODE_VERIFY_AMBER_COHERENCY, //! Test program verifies that amber tests have coherent capability requirements
 
     RUNMODE_LAST
@@ -148,6 +150,7 @@ private:
 
     CaseTreeNode *m_caseTree;
     de::MovePtr<const CasePaths> m_casePaths;
+    de::MovePtr<const CasePaths> m_excludePaths;
     std::vector<int> m_caseFraction;
     de::MovePtr<const CasePaths> m_caseFractionMandatoryTests;
     tcu::TestRunnerType m_runnerType;

@@ -145,32 +145,46 @@ IVec3 getBlockPixelSize(CompressedTexFormat format)
         switch (format)
         {
         case COMPRESSEDTEXFORMAT_ASTC_4x4_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_4x4_SFLOAT_BLOCK:
             return IVec3(4, 4, 1);
         case COMPRESSEDTEXFORMAT_ASTC_5x4_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_5x4_SFLOAT_BLOCK:
             return IVec3(5, 4, 1);
         case COMPRESSEDTEXFORMAT_ASTC_5x5_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_5x5_SFLOAT_BLOCK:
             return IVec3(5, 5, 1);
         case COMPRESSEDTEXFORMAT_ASTC_6x5_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_6x5_SFLOAT_BLOCK:
             return IVec3(6, 5, 1);
         case COMPRESSEDTEXFORMAT_ASTC_6x6_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_6x6_SFLOAT_BLOCK:
             return IVec3(6, 6, 1);
         case COMPRESSEDTEXFORMAT_ASTC_8x5_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_8x5_SFLOAT_BLOCK:
             return IVec3(8, 5, 1);
         case COMPRESSEDTEXFORMAT_ASTC_8x6_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_8x6_SFLOAT_BLOCK:
             return IVec3(8, 6, 1);
         case COMPRESSEDTEXFORMAT_ASTC_8x8_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_8x8_SFLOAT_BLOCK:
             return IVec3(8, 8, 1);
         case COMPRESSEDTEXFORMAT_ASTC_10x5_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_10x5_SFLOAT_BLOCK:
             return IVec3(10, 5, 1);
         case COMPRESSEDTEXFORMAT_ASTC_10x6_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_10x6_SFLOAT_BLOCK:
             return IVec3(10, 6, 1);
         case COMPRESSEDTEXFORMAT_ASTC_10x8_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_10x8_SFLOAT_BLOCK:
             return IVec3(10, 8, 1);
         case COMPRESSEDTEXFORMAT_ASTC_10x10_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_10x10_SFLOAT_BLOCK:
             return IVec3(10, 10, 1);
         case COMPRESSEDTEXFORMAT_ASTC_12x10_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_12x10_SFLOAT_BLOCK:
             return IVec3(12, 10, 1);
         case COMPRESSEDTEXFORMAT_ASTC_12x12_RGBA:
+        case COMPRESSEDTEXFORMAT_ASTC_12x12_SFLOAT_BLOCK:
             return IVec3(12, 12, 1);
         case COMPRESSEDTEXFORMAT_ASTC_4x4_SRGB8_ALPHA8:
             return IVec3(4, 4, 1);
@@ -200,6 +214,66 @@ IVec3 getBlockPixelSize(CompressedTexFormat format)
             return IVec3(12, 10, 1);
         case COMPRESSEDTEXFORMAT_ASTC_12x12_SRGB8_ALPHA8:
             return IVec3(12, 12, 1);
+        case COMPRESSEDTEXFORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+            return IVec3(3, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+            return IVec3(3, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+            return IVec3(3, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+            return IVec3(4, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+            return IVec3(4, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+            return IVec3(4, 3, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+            return IVec3(4, 4, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+            return IVec3(4, 4, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+            return IVec3(4, 4, 3);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+            return IVec3(4, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+            return IVec3(4, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+            return IVec3(4, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+            return IVec3(5, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+            return IVec3(5, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+            return IVec3(5, 4, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+            return IVec3(5, 5, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+            return IVec3(5, 5, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+            return IVec3(5, 5, 4);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+            return IVec3(5, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+            return IVec3(5, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+            return IVec3(5, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+            return IVec3(6, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+            return IVec3(6, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+            return IVec3(6, 5, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+            return IVec3(6, 6, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+            return IVec3(6, 6, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+            return IVec3(6, 6, 5);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+            return IVec3(6, 6, 6);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+            return IVec3(6, 6, 6);
+        case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+            return IVec3(6, 6, 6);
 
         default:
             DE_ASSERT(false);
@@ -343,6 +417,50 @@ bool isAstcFormat(CompressedTexFormat format)
     case COMPRESSEDTEXFORMAT_ASTC_10x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x12_SRGB8_ALPHA8:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x12_SFLOAT_BLOCK:
         return true;
 
     default:
@@ -368,6 +486,116 @@ bool isAstcSRGBFormat(CompressedTexFormat format)
     case COMPRESSEDTEXFORMAT_ASTC_10x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x12_SRGB8_ALPHA8:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool isAstcSFLOATFormat(CompressedTexFormat format)
+{
+    switch (format)
+    {
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x12_SFLOAT_BLOCK:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool isAstc3DFormat(CompressedTexFormat format)
+{
+    switch (format)
+    {
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool isAstcHdrFormat(CompressedTexFormat format)
+{
+    switch (format)
+    {
+    case COMPRESSEDTEXFORMAT_ASTC_4x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x12_SFLOAT_BLOCK:
         return true;
 
     default:
@@ -2082,41 +2310,44 @@ void decompressBc6H(const PixelBufferAccess &dst, const uint8_t *src, bool hasSi
         break;
     }
 
-    if (hasSign)
+    if (mode != -1)
     {
-        r[0] = signExtend(r[0], epBits[mode], 32);
-        g[0] = signExtend(g[0], epBits[mode], 32);
-        b[0] = signExtend(b[0], epBits[mode], 32);
-    }
-
-    if (transformed)
-    {
-        for (uint32_t i = 1; i < numEndpoints; i++)
+        if (hasSign)
         {
-            r[i] = signExtend(r[i], deltaBitsR, 32);
-            r[i] = (r[0] + r[i]) & (((uint32_t)1 << epBits[mode]) - 1);
-            g[i] = signExtend(g[i], deltaBitsG, 32);
-            g[i] = (g[0] + g[i]) & (((uint32_t)1 << epBits[mode]) - 1);
-            b[i] = signExtend(b[i], deltaBitsB, 32);
-            b[i] = (b[0] + b[i]) & (((uint32_t)1 << epBits[mode]) - 1);
+            r[0] = signExtend(r[0], epBits[mode], 32);
+            g[0] = signExtend(g[0], epBits[mode], 32);
+            b[0] = signExtend(b[0], epBits[mode], 32);
         }
-    }
 
-    if (hasSign)
-    {
-        for (uint32_t i = 1; i < 4; i++)
+        if (transformed)
         {
-            r[i] = signExtend(r[i], epBits[mode], 32);
-            g[i] = signExtend(g[i], epBits[mode], 32);
-            b[i] = signExtend(b[i], epBits[mode], 32);
+            for (uint32_t i = 1; i < numEndpoints; i++)
+            {
+                r[i] = signExtend(r[i], deltaBitsR, 32);
+                r[i] = (r[0] + r[i]) & (((uint32_t)1 << epBits[mode]) - 1);
+                g[i] = signExtend(g[i], deltaBitsG, 32);
+                g[i] = (g[0] + g[i]) & (((uint32_t)1 << epBits[mode]) - 1);
+                b[i] = signExtend(b[i], deltaBitsB, 32);
+                b[i] = (b[0] + b[i]) & (((uint32_t)1 << epBits[mode]) - 1);
+            }
         }
-    }
 
-    for (uint32_t i = 0; i < numEndpoints; i++)
-    {
-        r[i] = unquantize(r[i], mode, hasSign);
-        g[i] = unquantize(g[i], mode, hasSign);
-        b[i] = unquantize(b[i], mode, hasSign);
+        if (hasSign)
+        {
+            for (uint32_t i = 1; i < 4; i++)
+            {
+                r[i] = signExtend(r[i], epBits[mode], 32);
+                g[i] = signExtend(g[i], epBits[mode], 32);
+                b[i] = signExtend(b[i], epBits[mode], 32);
+            }
+        }
+
+        for (uint32_t i = 0; i < numEndpoints; i++)
+        {
+            r[i] = unquantize(r[i], mode, hasSign);
+            g[i] = unquantize(g[i], mode, hasSign);
+            b[i] = unquantize(b[i], mode, hasSign);
+        }
     }
 
     for (uint32_t i = 0; i < 16; i++)
@@ -2259,22 +2490,25 @@ void decompressBc7(const PixelBufferAccess &dst, const uint8_t *src)
             }
         }
 
-        for (uint32_t ep = 0; ep < numEndpoints; ep++)
-        {
-            // Left shift endpoint components so that their MSB lies in bit 7
-            for (uint32_t cpnt = 0; cpnt < 4; cpnt++)
-                endpoints[ep][cpnt] <<= 8 - (endpointBits[mode][cpnt] + endpointBits[mode][4]);
-
-            // Replicate each component's MSB into the LSBs revealed by the left-shift operation above
-            for (uint32_t cpnt = 0; cpnt < 4; cpnt++)
-                endpoints[ep][cpnt] |= endpoints[ep][cpnt] >> (endpointBits[mode][cpnt] + endpointBits[mode][4]);
-        }
-
-        // If this mode does not explicitly define the alpha component set alpha equal to 1.0
-        if (mode < 4)
+        if (mode != -1)
         {
             for (uint32_t ep = 0; ep < numEndpoints; ep++)
-                endpoints[ep][3] = 255;
+            {
+                // Left shift endpoint components so that their MSB lies in bit 7
+                for (uint32_t cpnt = 0; cpnt < 4; cpnt++)
+                    endpoints[ep][cpnt] <<= 8 - (endpointBits[mode][cpnt] + endpointBits[mode][4]);
+
+                // Replicate each component's MSB into the LSBs revealed by the left-shift operation above
+                for (uint32_t cpnt = 0; cpnt < 4; cpnt++)
+                    endpoints[ep][cpnt] |= endpoints[ep][cpnt] >> (endpointBits[mode][cpnt] + endpointBits[mode][4]);
+            }
+
+            // If this mode does not explicitly define the alpha component set alpha equal to 1.0
+            if (mode < 4)
+            {
+                for (uint32_t ep = 0; ep < numEndpoints; ep++)
+                    endpoints[ep][3] = 255;
+            }
         }
     }
 
@@ -2412,9 +2646,6 @@ void decompressAhbRaw12(const PixelBufferAccess &dst, const uint8_t *src)
 void decompressBlock(CompressedTexFormat format, const PixelBufferAccess &dst, const uint8_t *src,
                      const TexDecompressionParams &params)
 {
-    // No 3D blocks supported right now
-    DE_ASSERT(dst.getDepth() == 1);
-
     switch (format)
     {
     case COMPRESSEDTEXFORMAT_ETC1_RGB8:
@@ -2479,7 +2710,54 @@ void decompressBlock(CompressedTexFormat format, const PixelBufferAccess &dst, c
     case COMPRESSEDTEXFORMAT_ASTC_10x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x10_SRGB8_ALPHA8:
     case COMPRESSEDTEXFORMAT_ASTC_12x12_SRGB8_ALPHA8:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_8x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x5_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x6_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x8_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_10x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x10_SFLOAT_BLOCK:
+    case COMPRESSEDTEXFORMAT_ASTC_12x12_SFLOAT_BLOCK:
         astc::decompress(dst, src, format, params.astcMode);
+        break;
+
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+    case COMPRESSEDTEXFORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+        astc::decompress3D(dst, src, format, params.astcMode);
         break;
 
     case COMPRESSEDTEXFORMAT_BC1_RGB_UNORM_BLOCK:
@@ -2587,12 +2865,16 @@ void decompress(const PixelBufferAccess &dst, CompressedTexFormat fmt, const uin
             }
 }
 
-CompressedTexture::CompressedTexture(void) : m_format(COMPRESSEDTEXFORMAT_LAST), m_width(0), m_height(0), m_depth(0)
+CompressedTexture::CompressedTexture(void)
+    : m_format(COMPRESSEDTEXFORMAT_LAST_VULKAN)
+    , m_width(0)
+    , m_height(0)
+    , m_depth(0)
 {
 }
 
 CompressedTexture::CompressedTexture(CompressedTexFormat format, int width, int height, int depth)
-    : m_format(COMPRESSEDTEXFORMAT_LAST)
+    : m_format(COMPRESSEDTEXFORMAT_LAST_VULKAN)
     , m_width(0)
     , m_height(0)
     , m_depth(0)
@@ -2602,7 +2884,7 @@ CompressedTexture::CompressedTexture(CompressedTexFormat format, int width, int 
 
 CompressedTexture::CompressedTexture(CompressedTexFormat format, int width, int height, int depth,
                                      std::vector<uint8_t> &&data)
-    : m_format(COMPRESSEDTEXFORMAT_LAST)
+    : m_format(COMPRESSEDTEXFORMAT_LAST_VULKAN)
     , m_width(0)
     , m_height(0)
     , m_depth(0)
@@ -2622,7 +2904,7 @@ void CompressedTexture::setStorage(CompressedTexFormat format, int width, int he
     m_height = height;
     m_depth  = depth;
 
-    if (m_format != COMPRESSEDTEXFORMAT_LAST)
+    if (m_format != COMPRESSEDTEXFORMAT_LAST_VULKAN)
     {
         const IVec3 blockPixelSize = getBlockPixelSize(m_format);
         const int blockSize        = getBlockSize(m_format);
@@ -2641,7 +2923,7 @@ void CompressedTexture::setStorage(CompressedTexFormat format, int width, int he
     }
     else
     {
-        DE_ASSERT(m_format == COMPRESSEDTEXFORMAT_LAST);
+        DE_ASSERT(m_format == COMPRESSEDTEXFORMAT_LAST_VULKAN);
         DE_ASSERT(m_width == 0 && m_height == 0 && m_depth == 0);
         m_data.resize(0);
     }

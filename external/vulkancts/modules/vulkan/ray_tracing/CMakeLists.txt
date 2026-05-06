@@ -42,6 +42,7 @@ set(DEQP_VK_RAY_TRACING_SRCS
 	vktRayTracingTraversalControlTests.hpp
 	vktRayTracingAccelerationStructuresTests.cpp
 	vktRayTracingAccelerationStructuresTests.hpp
+	vktRayTracingAccelerationStructuresTestsModels.hpp
 	vktRayTracingWatertightnessTests.cpp
 	vktRayTracingWatertightnessTests.hpp
 	vktRayTracingPipelineLibraryTests.cpp
@@ -58,8 +59,14 @@ set(DEQP_VK_RAY_TRACING_SRCS
 	vktRayTracingOpacityMicromapTests.hpp
 	vktRayTracingPositionFetchTests.cpp
 	vktRayTracingPositionFetchTests.hpp
+	vktRayTracingShaderExecutionReorderTests.cpp
+	vktRayTracingShaderExecutionReorderTests.hpp
 	vktRayTracingLinearSweptSpheresTests.cpp
-    vktRayTracingLinearSweptSpheresTests.hpp
+	vktRayTracingLinearSweptSpheresTests.hpp
+	vktRayTracingLimitsTests.cpp
+	vktRayTracingLimitsTests.hpp
+	vktRayTracingInvocationReorderActivityTests.cpp
+	vktRayTracingInvocationReorderActivityTests.hpp
 	)
 
 set(DEQP_VK_RAY_TRACING_LIBS
